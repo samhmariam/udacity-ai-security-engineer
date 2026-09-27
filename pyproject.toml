@@ -1,0 +1,20 @@
+[project]
+name = "udacity-ai-security-engineer"
+version = "0.1.0"
+description = "AI security engineer coursework and harness tooling"
+readme = "README.md"
+authors = [
+    { name = "Samuel H.Mariam", email = "samhmariam@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.38.0",
+    "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+udacity-ai-security-engineer = "udacity_ai_security_engineer:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
