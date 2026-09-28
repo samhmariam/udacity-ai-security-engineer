@@ -1,0 +1,6 @@
+call_date,patient_name,mrn,date_of_birth,phone,procedure,discharge_date,follow_up_notes,nurse_name
+2026-01-06,Pat Testpatient,MRN-TEST-00017,1958-03-14,555-0171,Total knee replacement (left),2026-01-04,Pain 6/10; taking oxycodone as prescribed; incision dry; PT booked for 01-09,Lee Nursefake
+2026-01-06,Jordan Fakeperson,MRN-TEST-00023,1971-11-02,555-0172,Cardiac catheterization,2026-01-05,Mild bruising at groin site; started clopidogrel; asked about returning to work,Lee Nursefake
+2026-01-07,Casey Notapatient,MRN-TEST-00031,1990-07-21,555-0173,Laparoscopic appendectomy,2026-01-05,Fever 101.4 F; told to come to urgent care; follow-up call scheduled,Morgan Nursedemo
+2026-01-07,Robin Sampleton,MRN-TEST-00042,1949-05-30,555-0174,Hip fracture repair (right),2026-01-06,Lives alone; daughter staying 1 week; home health referral sent; history of depression noted,Morgan Nursedemo
+2026-01-08,Drew Examplepatient,MRN-TEST-00056,1983-09-09,555-0175,Hysterectomy,2026-01-06,No concerns; reminded about lifting limit of 10 lb for 6 weeks,Lee Nursefake

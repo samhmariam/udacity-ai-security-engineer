@@ -1,0 +1,43 @@
+WESTFIELD HEALTH
+Payer Contract Summary: Negotiated Reimbursement Rates
+Document Owner: Managed Care and Finance
+Classification: CONFIDENTIAL
+Last Updated: Q4 2025
+
+All organizations, people, and amounts in this training document are fictional.
+
+FOR MANAGED CARE, FINANCE, AND EXECUTIVE LEADERSHIP ONLY.
+CONTRACT TERMS ARE COVERED BY CONFIDENTIALITY CLAUSES WITH EACH PAYER.
+
+---
+
+PAYER: Example Mutual Health Plan
+Contract Term: January 2025 through December 2027
+Rate Basis: 142% of Medicare fee schedule for outpatient services
+Inpatient: Case rate of $18,400 per admission, adjusted by severity
+Payer Contact: Dana Sample, Director of Network Contracting
+Renewal Status: Active
+Notes: Most-favored-nation clause. Do not offer lower rates to any other commercial payer.
+
+---
+
+PAYER: Sample Care Alliance
+Contract Term: July 2024 through June 2026
+Rate Basis: 128% of Medicare fee schedule for outpatient services
+Inpatient: Per diem of $3,150
+Payer Contact: Lee Placeholder, VP of Provider Relations
+Renewal Status: In negotiation. Westfield Health proposed a 6% increase. Payer countered at 2%.
+Notes: If no agreement by April 2026, prepare out-of-network patient notification letters.
+
+---
+
+PAYER: Demo County Medicaid Managed Care
+Contract Term: January 2025 through December 2026
+Rate Basis: State Medicaid fee schedule plus 4% quality incentive
+Payer Contact: Chris Testcase, Contract Manager
+Renewal Status: Active
+Notes: Quality incentive depends on 30-day readmission rate staying below 14%.
+
+---
+
+This document contains confidential commercial information. Unauthorized access or distribution violates Westfield Health policy and the confidentiality terms of each payer agreement.

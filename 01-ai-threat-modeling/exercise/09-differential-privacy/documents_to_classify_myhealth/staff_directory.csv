@@ -1,0 +1,11 @@
+employee_id,full_name,email,phone_extension,department,manager_name,office_location,salary_band
+WH-2001,Alex Sample,alex.sample@westfieldhealth.example,x7101,Central Scheduling,Jordan Example,Main Campus Tower A Floor 1,Band 2
+WH-2002,Riley Testperson,riley.testperson@westfieldhealth.example,x7102,Central Scheduling,Jordan Example,Main Campus Tower A Floor 1,Band 2
+WH-2003,Morgan Fakename,morgan.fakename@westfieldhealth.example,x7215,Cardiology Clinic,Casey Placeholder,Main Campus Tower B Floor 3,Band 6
+WH-2004,Taylor Demo,taylor.demo@westfieldhealth.example,x7216,Cardiology Clinic,Casey Placeholder,Main Campus Tower B Floor 3,Band 4
+WH-2005,Jamie Mockup,jamie.mockup@westfieldhealth.example,x7330,Orthopedics Clinic,Pat Specimen,Northside Clinic Suite 200,Band 6
+WH-2006,Drew Notreal,drew.notreal@westfieldhealth.example,x7331,Orthopedics Clinic,Pat Specimen,Northside Clinic Suite 200,Band 3
+WH-2007,Sam Examplar,sam.examplar@westfieldhealth.example,x7440,Pharmacy,Robin Fixture,Main Campus Garage A Level,Band 5
+WH-2008,Quinn Dummy,quinn.dummy@westfieldhealth.example,x7441,Pharmacy,Robin Fixture,Main Campus Garage A Level,Band 3
+WH-2009,Avery Stub,avery.stub@westfieldhealth.example,x7550,Patient Billing,Jordan Example,Main Campus Tower A Floor 2,Band 3
+WH-2010,Charlie Mocksen,charlie.mocksen@westfieldhealth.example,x7660,Radiology,Casey Placeholder,Main Campus Tower B Floor 1,Band 5

@@ -1,0 +1,52 @@
+WESTFIELD HEALTH
+Patient Access Center: Call Handling and Scheduling Procedures
+Document Owner: Patient Access Operations
+Audience: Patient Access Center staff
+Last Updated: December 2025
+
+All names, numbers, and identifiers in this training document are fictional.
+
+---
+
+PURPOSE
+
+This document describes how Patient Access Center agents verify callers, book and change appointments, and escalate problems. It is for staff use.
+
+---
+
+CALLER IDENTITY VERIFICATION
+
+Before discussing or changing any appointment, verify the caller with all three of these:
+1. Patient's full name
+2. Date of birth
+3. Last 4 digits of the insurance member ID, or the patient's home ZIP code if the patient is self-pay
+
+If the caller fails one item, you may ask one additional question: the date of the patient's most recent visit. If the caller passes that question, continue. If the caller is a caregiver, confirm that a proxy form is on file in the scheduling system before sharing anything.
+
+---
+
+HELD AND OVERRIDE SLOTS
+
+Each clinic holds 2 same-day slots per provider for urgent add-ons. Release unused held slots at 10:00 a.m. Don't tell callers that held slots exist.
+
+Supervisors can override a full schedule with the "Provider Courtesy" booking type. Use it only when a provider or department manager requests it by internal message. Record the requester's name in the booking note.
+
+---
+
+OVERBOOKING RULES
+
+Primary care templates allow 1 overbook per half day. Specialty clinics do not allow overbooks without a supervisor override.
+
+---
+
+ESCALATION
+
+- Angry or threatening caller: transfer to the shift supervisor at extension 7710.
+- Caller reports a medical emergency: tell the caller to hang up and call 911.
+- System outage: switch to the paper scheduling log and page the on-call scheduling analyst through the operator.
+
+---
+
+AFTER-HOURS ROUTING
+
+From 7:00 p.m. to 7:00 a.m., the main scheduling line routes to the answering service. The answering service pages the on-call nurse for clinical questions only.
