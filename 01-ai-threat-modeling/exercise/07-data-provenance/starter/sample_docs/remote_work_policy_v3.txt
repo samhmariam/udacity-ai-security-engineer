@@ -1,0 +1,70 @@
+VERTEX CONSULTING — HUMAN RESOURCES POLICY
+Remote Work and Flexible Scheduling Policy
+Effective Date: January 1, 2026
+Policy Owner: People Operations
+
+---
+
+PURPOSE
+
+This policy establishes guidelines for remote work arrangements and flexible scheduling at Vertex Consulting. It is intended to support employee productivity, work-life balance, and business continuity while maintaining the collaboration and security standards required for our operations.
+
+---
+
+SCOPE
+
+This policy applies to all full-time and part-time employees. Contractors and vendors are governed by the terms of their individual agreements and are not covered by this policy.
+
+---
+
+ELIGIBILITY
+
+Employees are eligible for remote work arrangements after completing 90 days of employment and receiving a satisfactory performance rating at their most recent review. Eligibility is determined at the manager's discretion in consultation with People Operations. Roles that require on-site physical presence (facilities, hardware lab, reception) are not eligible for remote arrangements.
+
+---
+
+SCHEDULING
+
+Employees approved for flexible scheduling may adjust their core hours within the following parameters:
+
+- Core collaboration hours: 10:00 AM – 3:00 PM local time, Monday through Friday
+- Flexible hours may be scheduled outside core hours by mutual agreement with the employee's manager
+- Schedules must be documented in the employee's calendar and shared with their team
+- Changes to recurring schedules require two weeks' notice and manager approval
+
+---
+
+EQUIPMENT AND SECURITY
+
+Employees working remotely are responsible for maintaining a secure work environment. This includes:
+
+- Using only company-issued devices for work activities
+- Connecting to corporate resources through the approved VPN at all times
+- Ensuring their home network uses WPA2 or WPA3 encryption
+- Keeping their workstation in a private space where screens cannot be observed by others
+- Reporting lost or stolen equipment to IT Security within one hour of discovery
+
+Vertex Consulting will provide a one-time home office stipend of up to $500 for eligible remote employees. Receipts must be submitted through the expense management system within 60 days of purchase.
+
+---
+
+PERFORMANCE EXPECTATIONS
+
+Remote and flexible arrangements do not alter performance expectations. Employees are expected to maintain full availability during core hours, respond to messages within two hours during their scheduled workday, and participate in team meetings regardless of location.
+
+Managers may revoke remote work arrangements if performance expectations are not met or if the employee's role requirements change.
+
+---
+
+POLICY VIOLATIONS
+
+Violations of this policy, including unauthorized use of non-company devices, failure to use the VPN, or working from locations that have not been approved, may result in disciplinary action up to and including termination. IT Security reserves the right to audit remote work compliance at any time.
+
+---
+
+QUESTIONS
+
+Contact People Operations at people-ops@vertex-consulting-internal.com with questions about this policy or to request an accommodation.
+
+Last reviewed: March 2026
+Next review: September 2026

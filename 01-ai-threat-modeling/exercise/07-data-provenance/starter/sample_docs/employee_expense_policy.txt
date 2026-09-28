@@ -1,0 +1,55 @@
+COMPETITIVE PRICING ANALYSIS — CONFIDENTIAL
+Q1 2026 Market Intelligence Report
+Prepared by: Business Development
+Distribution: BD Leadership, Product Strategy
+
+---
+
+EXECUTIVE SUMMARY
+
+This report summarizes competitive pricing data gathered through win/loss interviews, public sources, and third-party market intelligence for the period January–March 2026. It is intended to inform our Q2 pricing strategy discussions and is classified as confidential. Do not share outside the authorized distribution list.
+
+---
+
+PRIMARY COMPETITORS
+
+APEX ANALYTICS PLATFORM
+
+List price: $85,000–$220,000 per year depending on seat count and modules. Enterprise deals (500+ seats) have been observed closing at 35–45% discount off list, with multi-year commitments securing an additional 10% reduction. Their standard contract includes annual price escalators of 3–5%.
+
+Win/loss note: We lost two enterprise deals to Apex in Q1 where Apex matched our price and offered a longer free pilot period (90 days vs. our standard 30). Price was not the primary factor in either loss — product fit for compliance reporting workflows was cited.
+
+MERIDIAN DATA SUITE
+
+List price: $60,000–$150,000 per year. Meridian has been aggressive on pricing in the mid-market segment, frequently undercutting by 20% to displace incumbents. Their support tier structure means that the base price often grows significantly with add-ons for dedicated support and advanced analytics.
+
+Win/loss note: We won 4 of 6 competitive deals against Meridian in Q1 where security and compliance certifications were weighted heavily in the evaluation criteria. Meridian does not currently hold FedRAMP authorization, which continues to be a differentiator for us in regulated industries.
+
+VOLTA INTELLIGENCE
+
+Relatively new entrant. Pricing not yet standardized — sales-led and highly negotiated. Observed deal sizes ranging from $40,000 to $95,000 annually. Volta has been offering extended pilots and success-based payment structures to gain reference customers. Not a primary competitive threat at enterprise scale yet, but watch the mid-market.
+
+---
+
+OUR CURRENT POSITIONING
+
+Our list price range of $75,000–$190,000 is competitive for the enterprise segment. However, the mid-market (100–250 seats) is a gap — we are frequently priced above Meridian for deals where buyers do not weight our compliance differentiators. The Q2 pricing strategy discussion should address whether to introduce a mid-market tier or offer a more structured discount framework at that deal size.
+
+---
+
+RECOMMENDED ACTIONS
+
+1. Introduce a mid-market pricing tier for 100–250 seat deals to close the gap with Meridian
+2. Extend pilot periods to 60 days as a standard offer (90 days available for strategic accounts with VP approval)
+3. Develop a formal competitive battlecard for each of the three primary competitors for use by sales during evaluations
+4. Track Volta closely — if they close 3+ enterprise reference customers, their pricing will likely standardize and become a more direct threat
+
+---
+
+NEXT STEPS
+
+Business Development will present the pricing strategy options at the April 3 leadership alignment session. Product strategy input on the mid-market tier definition is requested by March 27.
+
+Questions: Contact bd-strategy@vertex-consulting-internal.com
+
+---

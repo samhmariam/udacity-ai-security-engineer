@@ -1,0 +1,96 @@
+VERTEX CONSULTING — IT OPERATIONS RUNBOOK
+Incident Response: Access Provisioning Failures
+Document ID: IT-RUN-0042
+Owner: IT Operations
+Last Updated: February 2026
+
+---
+
+OVERVIEW
+
+This runbook covers the procedures for investigating and resolving access provisioning failures in the Vertex Consulting identity management system. Use this runbook when an employee or contractor reports that they cannot access a system they should have access to, or when the provisioning pipeline reports an error.
+
+---
+
+SEVERITY CLASSIFICATION
+
+Before beginning troubleshooting, classify the incident:
+
+- P1 (Critical): Production system access failure affecting more than 10 users, or blocking an active incident response
+- P2 (High): Access failure for a single user on a production system, or affecting any member of the security or on-call teams
+- P3 (Medium): Access failure for a single user on a non-production system
+- P4 (Low): Access failure for a contractor or vendor account on a non-production system
+
+P1 and P2 incidents must be escalated to the on-call IT Operations engineer immediately. P3 and P4 may be handled during business hours.
+
+---
+
+INITIAL TRIAGE
+
+Step 1: Confirm the reported failure
+
+Ask the reporting user to attempt the access again and provide the exact error message. Many access failures self-resolve within 5–10 minutes due to replication lag. Do not begin deeper troubleshooting until you have confirmed the failure is reproducible.
+
+Step 2: Check system status
+
+Before troubleshooting user-specific issues, check the status pages for the affected systems:
+- Identity provider (Okta): https://status.okta.com
+- AWS IAM/SSO: check the AWS Health Dashboard in the management account
+- Internal systems: check #it-status in Slack for any active maintenance windows
+
+Step 3: Verify provisioning request status
+
+Log in to the identity management console and locate the provisioning request for the affected user. Provisioning requests are created automatically when a manager submits an access request through the IT portal.
+
+Check:
+- Is the request in "Pending," "Processing," or "Failed" state?
+- If "Failed," what is the error code?
+- Was the request approved by the required approvers?
+
+---
+
+COMMON FAILURE CODES AND RESOLUTIONS
+
+ERROR: PROVISIONING_TIMEOUT
+Cause: The provisioning pipeline did not receive confirmation from the target system within the expected window.
+Resolution: Re-trigger the provisioning job from the admin console. If the second attempt also times out, escalate to the system owner for the target application.
+
+ERROR: GROUP_NOT_FOUND
+Cause: The access group specified in the provisioning request does not exist in the target system.
+Resolution: Verify the group name against the access catalog. If the group was recently renamed, update the provisioning template. Do not create ad-hoc groups — escalate to the access governance team.
+
+ERROR: LICENSE_LIMIT_REACHED
+Cause: The target system has reached its licensed user limit.
+Resolution: Notify the system owner and submit a license expansion request through the vendor portal. Temporary exceptions require VP-level approval.
+
+ERROR: ACCOUNT_LOCKED
+Cause: The user's account has been locked due to repeated failed authentication attempts.
+Resolution: Verify the user's identity via manager confirmation before unlocking. Do not unlock accounts based solely on the user's own request.
+
+---
+
+ESCALATION
+
+If the failure is not resolved within 30 minutes for P1/P2 or 4 hours for P3/P4, escalate:
+- P1/P2: Page the IT Operations on-call via PagerDuty
+- P3/P4: Create a Jira ticket in the IT-OPS project and assign to the provisioning queue
+
+---
+
+DOCUMENTATION
+
+All access provisioning incidents must be logged in the IT Service Management system with:
+- Affected user(s) and system(s)
+- Time of report and time of resolution
+- Root cause (select from the drop-down; if none applies, use "Other" and describe)
+- Actions taken
+
+Incidents involving security-sensitive systems (AWS, identity provider, secrets manager) must also be noted in the security incident log with a cross-reference to the IT ticket.
+
+---
+
+RELATED RUNBOOKS
+
+- IT-RUN-0038: Offboarding and Access Revocation
+- IT-RUN-0044: MFA Reset Procedures
+- IT-RUN-0051: AWS SSO Troubleshooting

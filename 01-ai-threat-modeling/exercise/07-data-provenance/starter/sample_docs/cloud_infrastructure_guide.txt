@@ -1,0 +1,136 @@
+VERTEX CONSULTING — TECHNICAL DOCUMENTATION
+AWS Architecture Reference: KnowledgeHub Platform
+Document ID: TECH-ARCH-0031
+Owner: Platform Engineering
+Classification: Internal
+Last Updated: March 2026
+
+---
+
+OVERVIEW
+
+This document describes the AWS architecture supporting KnowledgeHub, the internal AI assistant built on Amazon Bedrock AgentCore. It is intended as a reference for engineers, security reviewers, and auditors who need to understand how the system is structured and where key controls are applied.
+
+---
+
+ARCHITECTURE SUMMARY
+
+KnowledgeHub is a retrieval-augmented generation (RAG) system. User queries are submitted through an internal web interface and sent to an Amazon Bedrock AgentCore harness. The harness model calls a knowledge base retrieval tool through an AgentCore Gateway, receives relevant context from a Managed Knowledge Base, and then generates a response. The system operates entirely within Vertex Consulting's AWS organization and does not transmit data to external endpoints.
+
+CORE COMPONENTS
+
+1. Amazon Bedrock AgentCore Harness
+   - Deployed in us-east-1
+   - Uses Anthropic Claude as the model
+   - One tool: an AgentCore Gateway with a knowledge base target
+   - Guardrail attached in the harness model configuration: content filters, PII detection
+
+2. Amazon Bedrock Managed Knowledge Base
+   - Vector store: managed by AWS
+   - Embedding model: Amazon Titan Text Embeddings v2
+   - Source data: S3 bucket (vertex-kb-staging)
+   - Sync frequency: Daily at 02:00 UTC
+
+3. S3 Source Bucket (vertex-kb-staging)
+   - Region: us-east-1
+   - Versioning: Enabled
+   - Server access logging: Enabled, logs delivered to the vertex-access-logs bucket under kb-staging/
+   - Encryption: SSE-S3
+   - Public access: Blocked (all four public access block settings enabled)
+   - Bucket policy: Allows PUT only from approved IAM roles; the knowledge base service role has read-only access
+
+4. Internal Web Interface
+   - Hosted on AWS App Runner
+   - Authenticated via Okta SAML integration
+   - All traffic over HTTPS; TLS 1.2 minimum
+
+5. Logging and Monitoring
+   - CloudTrail: Enabled for all regions, management and data events
+   - CloudWatch Logs: Application logs from App Runner, Bedrock model invocation logs, knowledge base application logs
+   - Security Hub: Enabled with AWS Foundational Security Best Practices standard
+   - GuardDuty: Enabled in us-east-1
+
+---
+
+IAM ROLES AND PERMISSIONS
+
+VERTEX-HARNESS-EXECUTION-ROLE
+- Trust: bedrock-agentcore.amazonaws.com
+- Permissions: InvokeModel on the approved Claude inference profile, InvokeGateway on the KnowledgeHub gateway, ApplyGuardrail on the KnowledgeHub guardrail, CloudWatch Logs write
+- Scope: Least-privilege; no S3 access
+
+VERTEX-GATEWAY-SERVICE-ROLE
+- Trust: bedrock-agentcore.amazonaws.com
+- Permissions: GetKnowledgeBase and Retrieve on the KnowledgeHub knowledge base only
+- Scope: Read-only retrieval; no S3 access
+
+VERTEX-KB-SYNC-ROLE
+- Trust: bedrock.amazonaws.com (for the knowledge base sync)
+- Permissions: S3 GetObject, S3 ListBucket on vertex-kb-staging; InvokeModel on Titan Text Embeddings v2
+- Scope: Read-only from S3; no ability to modify bucket contents
+
+VERTEX-KB-CONTENT-ROLE
+- Trust: Selected IAM users (content owners, IT Operations)
+- Permissions: S3 PutObject, S3 DeleteObject on vertex-kb-staging/hr-docs/, vertex-kb-staging/it-docs/, vertex-kb-staging/announcements/ prefixes only
+- Scope: Scoped by prefix; no access to other prefixes or buckets
+
+VERTEX-VENDOR-DOCS-ROLE
+- Trust: Contractor IAM users
+- Permissions: S3 PutObject on vertex-kb-staging/vendor-docs/ prefix only
+- Scope: Strictly limited to vendor-docs prefix; any access outside this prefix is denied by explicit Deny statement in the policy
+
+---
+
+NETWORK ARCHITECTURE
+
+The KnowledgeHub platform does not expose any components directly to the public internet except the App Runner service endpoint, which requires Okta authentication before any AI functionality is accessible. All AWS service-to-service communication uses AWS PrivateLink endpoints where supported. VPC endpoints are configured for:
+- S3 (Gateway endpoint)
+- Bedrock (Interface endpoint)
+- Bedrock AgentCore (Interface endpoint)
+
+---
+
+DATA FLOW
+
+1. Employee submits query via internal web interface (authenticated via Okta)
+2. App Runner invokes the AgentCore harness via VPC endpoint
+3. The harness model calls the gateway's knowledge base tool, which retrieves relevant chunks from the Managed Knowledge Base
+4. The retrieved chunks are returned to the model as tool results
+5. Claude generates the response; the attached guardrail evaluates the user input and the model output
+6. Response returned to employee via App Runner
+
+No query content or generated responses are stored persistently outside of CloudWatch Logs. Logs are retained for 90 days and are accessible only to the security and platform engineering teams.
+
+---
+
+SECURITY CONTROLS SUMMARY
+
+| Control | Implementation | Status |
+|---|---|---|
+| Authentication | Okta SAML | Enabled |
+| Authorization | IAM least privilege | Enabled |
+| Data encryption at rest | SSE-S3 | Enabled |
+| Data encryption in transit | TLS 1.2+ | Enabled |
+| Audit logging | CloudTrail (all events) | Enabled |
+| Threat detection | GuardDuty | Enabled |
+| Content filtering | Amazon Bedrock Guardrails | Enabled |
+| Source versioning | S3 versioning | Enabled |
+| Public access block | S3 Block Public Access | Enabled |
+| Vulnerability management | Security Hub FSBP | Enabled |
+
+---
+
+OPEN ITEMS
+
+- Pre-ingestion document validation script: in development (target: April 2026)
+- Automated anomaly alerting on S3 access logs: not yet implemented
+- Periodic re-validation of KB source bucket contents: not yet scheduled
+
+---
+
+RELATED DOCUMENTS
+
+- TECH-ARCH-0028: AWS Organization Structure and Account Hierarchy
+- TECH-ARCH-0029: Guardrail Configuration Reference
+- IT-RUN-0051: AWS SSO Troubleshooting
+- SEC-POL-0015: Data Classification and Handling Policy
