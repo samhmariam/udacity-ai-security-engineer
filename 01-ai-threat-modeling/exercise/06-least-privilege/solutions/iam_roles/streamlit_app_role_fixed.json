@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeResearchBotHarness",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:InvokeHarness",
+        "bedrock-agentcore:InvokeAgentRuntime"
+      ],
+      "Resource": "arn:aws:bedrock-agentcore:us-east-1:123456789012:harness/ResearchBot-XXXXXXXXXX"
+    },
+    {
+      "Sid": "CloudWatchLogsWriteSpecificGroup",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "arn:aws:logs:us-east-1:123456789012:log-group:/aws/researchbot/app-logs:*"
+    }
+  ]
+}

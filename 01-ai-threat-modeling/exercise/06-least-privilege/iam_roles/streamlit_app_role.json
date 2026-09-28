@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockFullAccess",
+      "Effect": "Allow",
+      "Action": "bedrock:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchFullAccess",
+      "Effect": "Allow",
+      "Action": "cloudwatch:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogsFullAccess",
+      "Effect": "Allow",
+      "Action": "logs:*",
+      "Resource": "*"
+    }
+  ]
+}

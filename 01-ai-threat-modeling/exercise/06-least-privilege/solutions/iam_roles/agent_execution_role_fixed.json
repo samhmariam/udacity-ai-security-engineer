@@ -1,0 +1,48 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeApprovedModelOnly",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+      ]
+    },
+    {
+      "Sid": "RequireResearchBotGuardrail",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "bedrock:GuardrailIdentifier": [
+            "arn:aws:bedrock:us-east-1:123456789012:guardrail/researchbot-guardrail-XXXXXXXX",
+            "arn:aws:bedrock:us-east-1:123456789012:guardrail/researchbot-guardrail-XXXXXXXX:*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ApplyResearchBotGuardrail",
+      "Effect": "Allow",
+      "Action": "bedrock:ApplyGuardrail",
+      "Resource": "arn:aws:bedrock:us-east-1:123456789012:guardrail/researchbot-guardrail-XXXXXXXX"
+    },
+    {
+      "Sid": "InvokeResearchBotGateway",
+      "Effect": "Allow",
+      "Action": "bedrock-agentcore:InvokeGateway",
+      "Resource": "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/researchbot-gateway-XXXXXXXXXX"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "S3FullAccess",
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::gencore-research-kb",
+        "arn:aws:s3:::gencore-research-kb/*"
+      ]
+    },
+    {
+      "Sid": "BedrockFullAccess",
+      "Effect": "Allow",
+      "Action": "bedrock:*",
+      "Resource": "*"
+    }
+  ]
+}
