@@ -6,7 +6,7 @@
 | Account / Region | `911470903119` / `us-east-1` |
 | Assessed by | Samuel H. Mariam |
 | Date | 2026-10-03 |
-| Inputs | [ML-BOM](../Northstar%20Assist%20ML-BOM.md) · [STRIDE-ML threat model](../Northstar%20Assist%20STRIDE-ML%20Threat%20Model.md) · [IAM least-privilege changes](../iam-least-privilege/Northstar%20Assist%20IAM%20Least-Privilege%20Changes.md) · [Safety controls](../guardrail/Northstar%20Assist%20Safety%20Controls.md) · [Monitoring and IR playbook](../monitoring/Northstar%20Assist%20Monitoring%20and%20IR%20Playbook.md) · edge-case test results in this folder |
+| Inputs | [ML-BOM](../Northstar%20Assist%20ML-BOM.md) · [STRIDE-ML threat model](../Northstar%20Assist%20STRIDE-ML%20Threat%20Model.md) · [IAM least-privilege changes](../iam-least-privilege/Northstar%20Assist%20IAM%20Least-Privilege%20Changes.md) · [Safety controls](../guardrail/Northstar%20Assist%20Safety%20Controls.md) · [Monitoring plan](../monitoring/Northstar%20Assist%20Monitoring%20Plan.md) · [IR playbook PB-01](../monitoring/Northstar%20Assist%20IR%20Playbook%20PB-01.md) · edge-case test results in this folder |
 
 > **Recommendation: APPROVE WITH CONDITIONS.** The guardrail, IAM and monitoring controls held against direct injection, misuse and exfiltration in every deterministic test, but **2 of 14 edge cases disclosed confidential data in all 3 of their runs** (sales deal data, and production infrastructure identifiers), and 4 cases behaved inconsistently between runs. Launch is gated on four conditions (section 5): data minimization of the knowledge base, real user authentication, ingestion controls, and alert routing.
 

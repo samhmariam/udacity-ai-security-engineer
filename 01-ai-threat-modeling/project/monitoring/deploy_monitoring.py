@@ -203,7 +203,7 @@ def w(title, metrics, x, y, stat="Sum", period=300, width=8, view="timeSeries", 
 dashboard = {"widgets": [
     {"type": "text", "x": 0, "y": 0, "width": 24, "height": 2, "properties": {"markdown":
         "## Northstar Assist: AI security signals\nAlarms notify `northstar-assist-security-alerts`. "
-        "Runbook: `monitoring/Northstar Assist Monitoring and IR Playbook.md` (PB-01). "
+        "Runbook: `monitoring/Northstar Assist IR Playbook PB-01.md`. Plan: `monitoring/Northstar Assist Monitoring Plan.md`. "
         "Saved queries: CloudWatch > Logs Insights > Saved queries > **NorthstarAssist**."}},
     w("Guardrail blocks (input)", [[NS, "PromptAttackBlocked"], [NS, "TopicBlockedInput"], [NS, "InputBlocked"]], 0, 2,
       annotations=[{"label": "burst alarm (15 min)", "value": 10}]),
