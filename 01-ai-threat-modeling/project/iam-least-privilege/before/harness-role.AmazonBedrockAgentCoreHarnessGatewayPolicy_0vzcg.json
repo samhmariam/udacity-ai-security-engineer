@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AgentCoreGatewayAccess",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:InvokeGateway"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:us-east-1:911470903119:gateway/northstar-assist-gateway-bkdy1kxxxm"
+      ]
+    }
+  ]
+}

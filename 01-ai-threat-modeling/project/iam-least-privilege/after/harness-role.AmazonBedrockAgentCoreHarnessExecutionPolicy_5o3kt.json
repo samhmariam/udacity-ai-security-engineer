@@ -1,0 +1,99 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeHaikuGlobalInferenceProfile",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": "arn:aws:bedrock:us-east-1:911470903119:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+    },
+    {
+      "Sid": "InvokeHaikuFoundationModelOnlyThroughProfile",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": [
+        "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "bedrock:InferenceProfileArn": "arn:aws:bedrock:us-east-1:911470903119:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      }
+    },
+    {
+      "Sid": "ApplyNorthstarGuardrailOnly",
+      "Effect": "Allow",
+      "Action": "bedrock:ApplyGuardrail",
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:911470903119:guardrail/bzgydako86r9",
+        "arn:aws:bedrock:us-east-1:911470903119:guardrail/bzgydako86r9:*"
+      ]
+    },
+    {
+      "Sid": "EcrManagedImagePull",
+      "Effect": "Allow",
+      "Action": ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"],
+      "Resource": "arn:aws:ecr:us-east-1:*:repository/harness-*"
+    },
+    {
+      "Sid": "EcrAuthorizationTokens",
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken", "ecr-public:GetAuthorizationToken"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "StsBearerTokenForEcrPublicOnly",
+      "Effect": "Allow",
+      "Action": "sts:GetServiceBearerToken",
+      "Resource": "*",
+      "Condition": { "StringEquals": { "sts:AWSServiceName": "ecr-public.amazonaws.com" } }
+    },
+    {
+      "Sid": "XRayTracingAccess",
+      "Effect": "Allow",
+      "Action": ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogsOwnRuntimeGroup",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:DescribeLogStreams"],
+      "Resource": "arn:aws:logs:us-east-1:911470903119:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*"
+    },
+    {
+      "Sid": "CloudWatchLogsDescribeGroups",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "arn:aws:logs:us-east-1:911470903119:log-group:*"
+    },
+    {
+      "Sid": "CloudWatchLogsOwnRuntimeStreams",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:911470903119:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*:log-stream:*"
+    },
+    {
+      "Sid": "CloudWatchLogsPutResourcePolicy",
+      "Effect": "Allow",
+      "Action": "logs:PutResourcePolicy",
+      "Resource": "arn:aws:logs:us-east-1:911470903119:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*"
+    },
+    {
+      "Sid": "CloudWatchMetricsPublish",
+      "Effect": "Allow",
+      "Action": "cloudwatch:PutMetricData",
+      "Resource": "*",
+      "Condition": { "StringEquals": { "cloudwatch:namespace": "bedrock-agentcore" } }
+    },
+    {
+      "Sid": "AgentCoreWorkloadIdentity",
+      "Effect": "Allow",
+      "Action": ["bedrock-agentcore:GetWorkloadAccessToken", "bedrock-agentcore:GetWorkloadAccessTokenForJWT"],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:us-east-1:911470903119:workload-identity-directory/default",
+        "arn:aws:bedrock-agentcore:us-east-1:911470903119:workload-identity-directory/default/workload-identity/harness_NorthstarAssist-*"
+      ]
+    }
+  ]
+}

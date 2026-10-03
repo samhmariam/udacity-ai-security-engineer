@@ -14,3 +14,6 @@ Thumbs.db
 coverage/
 htmlcov/
 *.log
+
+# PB-01 dry-run evidence exports contain retrieved PII
+**/dryrun-case/

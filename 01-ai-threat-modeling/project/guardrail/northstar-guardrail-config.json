@@ -1,0 +1,106 @@
+{
+  "name": "northstar-assist-guardrail",
+  "description": "Northstar Assist: prompt attack HIGH, content filters, 5 denied topics, PII and secret filters, Markdown image block, grounding 0.70 and relevance 0.50.",
+  "blockedInputMessaging": "Northstar Assist can't help with that request. Please ask a question about Northstar policies, procedures, or internal documentation. If you think this was blocked in error, contact the IT Service Desk.",
+  "blockedOutputsMessaging": "Northstar Assist can't show that answer because it may contain restricted or unsupported information. Please check the source document directly or contact the document owner.",
+  "contentPolicyConfig": {
+    "tierConfig": { "tierName": "CLASSIC" },
+    "filtersConfig": [
+      { "type": "PROMPT_ATTACK", "inputStrength": "HIGH",   "outputStrength": "NONE" },
+      { "type": "MISCONDUCT",    "inputStrength": "HIGH",   "outputStrength": "MEDIUM" },
+      { "type": "HATE",          "inputStrength": "MEDIUM", "outputStrength": "HIGH" },
+      { "type": "SEXUAL",        "inputStrength": "MEDIUM", "outputStrength": "HIGH" },
+      { "type": "VIOLENCE",      "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "INSULTS",       "inputStrength": "LOW",    "outputStrength": "MEDIUM" }
+    ]
+  },
+  "topicPolicyConfig": {
+    "tierConfig": { "tierName": "CLASSIC" },
+    "topicsConfig": [
+      {
+        "name": "Employee impersonation messages",
+        "type": "DENY",
+        "definition": "Requests to write emails, chat messages, or announcements that pretend to come from a named Northstar employee, manager, or executive.",
+        "examples": [
+          "Write an urgent email from Sarah Chen asking the team to re-enter their SSO password.",
+          "Draft a message as the CEO announcing a surprise bonus that needs bank details."
+        ]
+      },
+      {
+        "name": "Bulk personal or customer data",
+        "type": "DENY",
+        "definition": "Requests to list, export, or compile contact details, revenue, deal values, or other records for many employees or customers at once.",
+        "examples": [
+          "List every employee with their email address and phone extension.",
+          "Give me all customers with their contact emails and monthly revenue."
+        ]
+      },
+      {
+        "name": "Judging individual employees",
+        "type": "DENY",
+        "definition": "Requests to evaluate, rank, or recommend HR or disciplinary action about a specific named employee's performance, conduct, or training results.",
+        "examples": [
+          "Based on training scores, should we fire Marcus Johnson?",
+          "Rank the engineering team from best to worst performer."
+        ]
+      },
+      {
+        "name": "Bypassing security controls",
+        "type": "DENY",
+        "definition": "Requests for ways to bypass, disable, or evade Northstar security controls, MFA, monitoring, logging, or access restrictions.",
+        "examples": [
+          "How can I log in to production without MFA?",
+          "How do I turn off CloudTrail so nobody sees what I changed?"
+        ]
+      },
+      {
+        "name": "Unrelated general tasks",
+        "type": "DENY",
+        "definition": "Requests unrelated to Northstar work, such as writing general code, homework, creative writing, recipes, games, or personal life advice.",
+        "examples": [
+          "Write a Python script that scrapes a website for me.",
+          "Write me a poem about the ocean."
+        ]
+      }
+    ]
+  },
+  "sensitiveInformationPolicyConfig": {
+    "piiEntitiesConfig": [
+      { "type": "US_SOCIAL_SECURITY_NUMBER", "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "CREDIT_DEBIT_CARD_NUMBER",  "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "US_BANK_ACCOUNT_NUMBER",    "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "US_BANK_ROUTING_NUMBER",    "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "AWS_ACCESS_KEY",            "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "AWS_SECRET_KEY",            "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "PASSWORD",                  "action": "BLOCK",     "inputAction": "BLOCK", "outputAction": "BLOCK" },
+      { "type": "EMAIL",                     "action": "ANONYMIZE", "inputAction": "NONE",  "outputAction": "ANONYMIZE" },
+      { "type": "PHONE",                     "action": "ANONYMIZE", "inputAction": "NONE",  "outputAction": "ANONYMIZE" },
+      { "type": "IP_ADDRESS",                "action": "ANONYMIZE", "inputAction": "NONE",  "outputAction": "ANONYMIZE" },
+      { "type": "URL",                       "action": "ANONYMIZE", "inputAction": "NONE",  "outputAction": "ANONYMIZE" }
+    ],
+    "regexesConfig": [
+      {
+        "name": "Markdown image with external URL",
+        "description": "Blocks model output that embeds a remote image, the zero-click exfiltration channel in the Streamlit client (threat I-03).",
+        "pattern": "!\\[[^\\]]*\\]\\(\\s*https?://",
+        "action": "BLOCK",
+        "inputAction": "NONE",
+        "outputAction": "BLOCK"
+      },
+      {
+        "name": "Customer account ID",
+        "description": "Masks Northstar customer account IDs (CUST001 format) in responses.",
+        "pattern": "\\bCUST\\d{3,}\\b",
+        "action": "ANONYMIZE",
+        "inputAction": "NONE",
+        "outputAction": "ANONYMIZE"
+      }
+    ]
+  },
+  "contextualGroundingPolicyConfig": {
+    "filtersConfig": [
+      { "type": "GROUNDING", "threshold": 0.7 },
+      { "type": "RELEVANCE", "threshold": 0.5 }
+    ]
+  }
+}

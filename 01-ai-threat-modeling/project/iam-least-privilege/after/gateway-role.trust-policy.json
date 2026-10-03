@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AmazonBedrockAgentCoreGatewayBasePolicyProd",
+      "Effect": "Allow",
+      "Principal": { "Service": "bedrock-agentcore.amazonaws.com" },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": { "aws:SourceAccount": "911470903119" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:bedrock-agentcore:us-east-1:911470903119:gateway/northstar-assist-gateway-bkdy1kxxxm" }
+      }
+    }
+  ]
+}

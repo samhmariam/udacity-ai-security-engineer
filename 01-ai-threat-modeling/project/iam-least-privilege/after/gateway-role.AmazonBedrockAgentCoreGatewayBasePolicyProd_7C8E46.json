@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GetOwnGateway",
+      "Effect": "Allow",
+      "Action": "bedrock-agentcore:GetGateway",
+      "Resource": "arn:aws:bedrock-agentcore:us-east-1:911470903119:gateway/northstar-assist-gateway-bkdy1kxxxm"
+    },
+    {
+      "Sid": "GetConfigurationBundleVersion",
+      "Effect": "Allow",
+      "Action": "bedrock-agentcore:GetConfigurationBundleVersion",
+      "Resource": "arn:aws:bedrock-agentcore:us-east-1:911470903119:configuration-bundle/*",
+      "Condition": {
+        "StringEquals": { "aws:ResourceAccount": "${aws:PrincipalAccount}", "aws:RequestedRegion": "us-east-1" }
+      }
+    }
+  ]
+}

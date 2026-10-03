@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadAndRetrieveNorthstarKnowledgeBaseOnly",
+      "Effect": "Allow",
+      "Action": ["bedrock:GetKnowledgeBase", "bedrock:Retrieve", "bedrock:AgenticRetrieveStream"],
+      "Resource": "arn:aws:bedrock:us-east-1:911470903119:knowledge-base/ZCAWWBRBXU"
+    },
+    {
+      "Sid": "EmbedQueryWithTitanV2ViaBedrockOnly",
+      "Effect": "Allow",
+      "Action": "bedrock:InvokeModel",
+      "Resource": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+      "Condition": { "ForAnyValue:StringEquals": { "aws:CalledVia": "bedrock.amazonaws.com" } }
+    }
+  ]
+}

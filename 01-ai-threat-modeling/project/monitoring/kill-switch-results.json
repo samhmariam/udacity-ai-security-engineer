@@ -1,0 +1,28 @@
+{
+  "NorthstarEmergencyNoRetrieval": {
+    "while_active": {
+      "ok": false,
+      "error": "An error occurred (runtimeClientError) when calling the InvokeHarness operation: Failed to load tool 'northstar-assist-gateway-bkdy1kxxxm' (type=HarnessToolType.agentcore_gateway): Failed to start MCP client: the client initialization failed: unhandled errors in a TaskGroup (1 sub-exception): Client"
+    },
+    "active_after_seconds": 47,
+    "after_removal": {
+      "ok": true,
+      "stop": "end_turn",
+      "cites_handbook": false,
+      "answer": "eliable high-speed internet connection\n- Dedicated, quiet workspace\n- Availability during core hours via Slack/email\n- Attendance at scheduled video meetings with camera on\n- Compliance with information security policies"
+    }
+  },
+  "NorthstarEmergencyStop": {
+    "while_active": {
+      "ok": false,
+      "error": "An error occurred (runtimeClientError) when calling the InvokeHarness operation: An error occurred (AccessDeniedException) when calling the ConverseStream operation: User: arn:aws:sts::911470903119:assumed-role/AmazonBedrockAgentCoreHarnessDefaultServiceRole-p0869/BedrockAgentCore-f5455d13-a94d-45fe"
+    },
+    "active_after_seconds": 50,
+    "after_removal": {
+      "ok": true,
+      "stop": "end_turn",
+      "cites_handbook": false,
+      "answer": "eliable high-speed internet connection\n- Dedicated, quiet workspace\n- Availability during core hours via Slack/email\n- Attendance at scheduled video meetings with camera on\n- Compliance with information security policies"
+    }
+  }
+}

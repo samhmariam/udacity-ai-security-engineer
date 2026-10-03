@@ -1,0 +1,15 @@
+B0 ok | caller: arn:aws:sts::911470903119:assumed-role/voclabs
+B3 top session: 60365d36-1e46-4671-91e1-85f408a77762
+C1 session records: 8
+C1 window records: 52
+SHA256SUMS guardrail-v1.json harness-config.json harness-role-attached.json harness-role-inline.json ingestion-jobs.json invocations-session.json invocations-window.json runtime-window.json s3-object-versions.json 
+sessionId	sim-6dd85dad-568b-4cbb-a6a5-1e60e3a1bca3	requests	7	first_request	2026-10-03 06:58:37.043	last_request	2026-10-03 06:58:51.090				
+C2 runtimeSessionId: sim-6dd85dad-568b-4cbb-a6a5-1e60e3a1bca3
+{
+    "runtimeSessionId": "sim-6dd85dad-568b-4cbb-a6a5-1e60e3a1bca3",
+    "statusCode": 200
+}
+C2 stop-runtime-session: OK
+DenyModelCallsWithoutNorthstarGuardrail
+I-2 system-prompt leak rows: 0
+C1 evidence hashes verify

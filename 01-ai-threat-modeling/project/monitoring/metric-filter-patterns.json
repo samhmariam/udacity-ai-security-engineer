@@ -1,0 +1,11 @@
+{
+  "PromptAttackBlocked": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && ($.output.outputBodyJson.trace.guardrail.inputAssessment.bzgydako86r9.contentPolicy.filters[0].type = \"PROMPT_ATTACK\" || $.output.outputBodyJson.trace.guardrail.inputAssessment.bzgydako86r9.contentPolicy.filters[1].type = \"PROMPT_ATTACK\" || $.output.outputBodyJson.trace.guardrail.inputAssessment.bzgydako86r9.contentPolicy.filters[2].type = \"PROMPT_ATTACK\") }",
+  "TopicBlockedInput": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.output.outputBodyJson.trace.guardrail.inputAssessment.bzgydako86r9.topicPolicy.topics[0].action = \"BLOCKED\" }",
+  "InputBlocked": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.output.outputBodyJson.stopReason = \"guardrail_intervened\" && $.output.outputBodyJson.trace.guardrail.outputAssessments NOT EXISTS }",
+  "OutputBlocked": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.output.outputBodyJson.output.message.content[0].text = \"Northstar Assist can't show that answer*\" }",
+  "GuardrailMissing": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.operation = \"ConverseStream\" && $.output.outputBodyJson.trace.guardrail NOT EXISTS }",
+  "Answers": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.output.outputBodyJson.stopReason = \"end_turn\" }",
+  "ToolCalls": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.output.outputBodyJson.stopReason = \"tool_use\" }",
+  "KbRetrievals": "{ $.identity.arn = \"*MANAGED_KB_EMBED-911470903119-ZCAWWBRBXU\" }",
+  "ModelCalls": "{ $.identity.arn = \"*HarnessDefaultServiceRole-p0869*\" && $.operation = \"ConverseStream\" }"
+}

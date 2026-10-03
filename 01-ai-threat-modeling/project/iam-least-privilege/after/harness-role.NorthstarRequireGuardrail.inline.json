@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyModelCallsWithoutNorthstarGuardrail",
+      "Effect": "Deny",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "bedrock:GuardrailIdentifier": [
+            "arn:aws:bedrock:us-east-1:911470903119:guardrail/bzgydako86r9",
+            "arn:aws:bedrock:us-east-1:911470903119:guardrail/bzgydako86r9:*"
+          ]
+        }
+      }
+    }
+  ]
+}
