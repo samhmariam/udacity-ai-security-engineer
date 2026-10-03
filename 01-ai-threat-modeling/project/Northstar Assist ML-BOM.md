@@ -327,6 +327,10 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 
 | Field | Value |
 |---|---|
+| **Component type** | Data: the retrieval corpus (unstructured and semi-structured documents). Not a model. |
+| **Provider** | Northstar Technologies (content owners), supplied as course starter files |
+| **Intended use** | The single source of truth Northstar Assist answers from: company policies, procedures, product, security and operational documentation for employees |
+| **Known limitations / transparency gaps** | Mixes general policy content with PII and confidential commercial and infrastructure data (F-03). There is no document owner, version or approval metadata, so authorship and currency can't be verified. Some content is dated (2023). No content-integrity checks (F-06). |
 | Asset | 30 Northstar internal documents, 5 in each of 6 formats, 470,608 bytes in total |
 | Location | Origin: `project/northstar-knowledge-base/` (course starter files). Uploaded to `s3://northstar-assist-kb-chrst/northstar-knowledge-base/{csv,docx,html,pdf,txt,xlsx}/` on 2026-10-02 around 16:38 UTC. |
 | Contents | **CSV:** AWS infrastructure inventory, customer accounts, employee directory, sales pipeline, support tickets. **DOCX:** disaster recovery plan, PRD, QBR, security policy, SOW template. **HTML:** API authentication guide, AWS architecture documentation, company policies handbook, product features overview, troubleshooting guide. **PDF:** API best practices, compliance overview, customer success playbook, data governance policy, SLA. **TXT:** Q3 kickoff announcement, engineering meeting notes, incident report, engineering onboarding checklist, v2.5.0 release notes. **XLSX:** Q3 budget tracking, training records, OKR tracking, project timeline, vendor management. |
@@ -340,6 +344,10 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 
 | Field | Value |
 |---|---|
+| **Component type** | Storage: object storage for the knowledge-source documents |
+| **Provider** | Amazon Web Services (Amazon S3), configured by Northstar |
+| **Intended use** | Holds the raw source documents that the knowledge base data source syncs from. Only the KB service role should read it, and only a content owner should write to it. |
+| **Known limitations / transparency gaps** | No bucket policy restricting writers, server access logging disabled, and CloudTrail data events unavailable in the lab. So who uploaded or changed a document can't be determined (R-02). SSE-S3 rather than a customer-managed key. |
 | Bucket | `northstar-assist-kb-chrst` (`us-east-1`, owner account `911470903119`) |
 | Object count / size | 30 objects, 470,608 bytes, all under the prefix `northstar-knowledge-base/` |
 | Encryption at rest | SSE-S3 (`AES256`) with S3 Bucket Key enabled. SSE-C is blocked. No customer-managed KMS key. |
@@ -356,6 +364,10 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 
 | Field | Value |
 |---|---|
+| **Component type** | Retrieval service: managed RAG knowledge base (parsing, chunking, embedding with Titan V2, vector search) |
+| **Provider** | Amazon Web Services (Amazon Bedrock AgentCore Managed Knowledge Base) |
+| **Intended use** | Turns the S3 documents into a searchable vector index, and returns the 5 most relevant chunks, with source URI and score, for each Retrieve query |
+| **Known limitations / transparency gaps** | The vector store's type, encryption key and isolation are AWS-managed and **not visible or auditable** by the customer. The chunking and smart-parsing behaviour isn't documented in detail. There's no per-document access control (`aclEnabled: false`). Deletion protection is off. Application log delivery is configured, but no events have been recorded. |
 | Knowledge base | `northstar-assist-kb`, ID `ZCAWWBRBXU`, ARN `arn:aws:bedrock:us-east-1:911470903119:knowledge-base/ZCAWWBRBXU`, status `ACTIVE`, created 2026-10-02 16:43 UTC |
 | Type | `MANAGED` (Amazon Bedrock AgentCore Managed Knowledge Base). AWS manages the parsing, chunking, embedding and vector storage. |
 | Embedding model | `amazon.titan-embed-text-v2:0`, 1,024 dimensions, `FLOAT32` (`embeddingModelType: CUSTOM`, meaning chosen explicitly rather than the default) |
@@ -371,6 +383,10 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 
 | Field | Value |
 |---|---|
+| **Component type** | Integration service: an MCP tool gateway that exposes the knowledge base to the agent as a tool |
+| **Provider** | Amazon Web Services (Amazon Bedrock AgentCore Gateway), using the AWS-supplied `bedrock-knowledge-bases` connector v1.0.0 |
+| **Intended use** | Lets the harness call exactly one tool, `northstar-kb___Retrieve`, on KB `ZCAWWBRBXU`, authenticated with IAM (SigV4) inbound and the gateway service role outbound |
+| **Known limitations / transparency gaps** | The connector's internals (how it calls Retrieve or agentic retrieval) are AWS-managed. The gateway has no rate limits or rules, and returns DEBUG-level error detail. Gateway traces need CloudWatch Transaction Search, which the lab doesn't offer. |
 | Gateway | `northstar-assist-gateway`, ID `northstar-assist-gateway-bkdy1kxxxm`, ARN `arn:aws:bedrock-agentcore:us-east-1:911470903119:gateway/northstar-assist-gateway-bkdy1kxxxm`, status `READY` |
 | Endpoint | `https://northstar-assist-gateway-bkdy1kxxxm.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp` |
 | Protocol | MCP (supported versions `2025-11-25` and `2026-07-28`). Response streaming is off. |
@@ -386,6 +402,10 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 
 | Field | Value |
 |---|---|
+| **Component type** | Agent orchestration service: a managed agent loop that runs the model, the system prompt and the tools on an AgentCore Runtime |
+| **Provider** | Amazon Web Services (Amazon Bedrock AgentCore Harness), configured by Northstar |
+| **Intended use** | Receives each employee question (`InvokeHarness`), runs Claude Haiku 4.5 with the Northstar system prompt, executes the Retrieve tool through the gateway, and streams the grounded answer back |
+| **Known limitations / transparency gaps** | Callers can override the model, system prompt and tools per call (F-04). The agent-loop runtime is AWS-managed, and its logs carry no prompts or tool arguments. The guardrail doesn't screen tool results, and grounding checks aren't evaluated on harness traffic. There is no end-user identity in any harness log. |
 | Harness | `NorthstarAssist`, ID `NorthstarAssist-yH4PMorNwm`, version 1, status `READY`. Endpoint `DEFAULT` runs live version 1. |
 | Model | `global.anthropic.claude-haiku-4-5-20251001-v1:0` via `converse_stream`. No `maxTokens` or temperature override. |
 | System prompt | See Model 1, section 3.1 |
@@ -400,6 +420,14 @@ Titan Text Embeddings V2 is used only for semantic retrieval. At **ingest** it e
 > **Finding F-04: per-call harness override and weak client authentication.** Any principal allowed to call `bedrock-agentcore:InvokeHarness` on this harness can supply its own model, system prompt and tools for that call. This bypasses the configured instructions. The reference Streamlit app sends only the user message, but that is a client-side convention, not a control. Its only protection is an optional shared password (`APP_PASSWORD`), compared in plain text; when the variable is empty, there is no authentication at all. *Recommendation:* restrict `InvokeHarness` to the app's own role, put real authentication (Cognito or SSO) in front of the app, and never pass user-supplied model or tool settings through.
 
 ### S6. Key IAM Roles
+
+| Role | Component type | Provider | Intended use | Known limitations / transparency gaps |
+|---|---|---|---|---|
+| **Harness execution role** (A8) | IAM service role (identity) | AWS IAM. Created by the AgentCore console with default policies. | Lets the harness runtime call Claude Haiku 4.5, invoke the Northstar gateway, pull its container image, and write its own logs and metrics | Console defaults were far broader than needed (F-07). The table below shows the **as-found** state, scoped on 2026-10-02 (see `iam-least-privilege/`). It is shared by every session, so actions can't be attributed to a user. |
+| **Gateway service role** (A9) | IAM service role (identity) | AWS IAM. Created by the AgentCore console. | Lets the gateway call `bedrock:Retrieve` on KB `ZCAWWBRBXU` (and Titan V2 for query embedding) on the harness's behalf | As found, it had agentic retrieval on any knowledge base and wildcard model and guardrail grants. Scoped on 2026-10-02. |
+| **KB service role** (A10) | IAM service role (identity) | AWS IAM. Created by the Bedrock console. | Lets the knowledge base read the S3 source bucket and call Titan V2 during ingestion and query embedding | Already least-privilege. Its trust policy allows any KB in the account (`knowledge-base/*`). |
+
+As-found permissions (2026-10-02, before the least-privilege changes):
 
 | Role | Trusted principal and conditions | Observed permissions | Assessment |
 |---|---|---|---|

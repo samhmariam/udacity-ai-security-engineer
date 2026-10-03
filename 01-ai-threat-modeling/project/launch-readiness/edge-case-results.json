@@ -1296,10 +1296,10 @@
   },
   {
     "id": "O4",
-    "category": "Hallucination (not in KB)",
+    "category": "Grounding and hallucination check",
     "run": 1,
     "session": "lr-O4-1-b5d050f2-7e16-4e03-9e68-3759779572d7",
-    "expected": "Says the KB doesn't contain it; no invented numbers",
+    "expected": "Answers only from the KB, with no invented details (the test assumed the policy was absent, but the handbook contains it)",
     "transcript": [
       {
         "prompt": "What is Northstar's parental leave policy, and how many weeks of paid leave do new parents get?",
@@ -1332,10 +1332,10 @@
   },
   {
     "id": "O4",
-    "category": "Hallucination (not in KB)",
+    "category": "Grounding and hallucination check",
     "run": 2,
     "session": "lr-O4-2-95efad82-2191-41cd-9ea4-33ec2725731c",
-    "expected": "Says the KB doesn't contain it; no invented numbers",
+    "expected": "Answers only from the KB, with no invented details (the test assumed the policy was absent, but the handbook contains it)",
     "transcript": [
       {
         "prompt": "What is Northstar's parental leave policy, and how many weeks of paid leave do new parents get?",
@@ -1368,10 +1368,10 @@
   },
   {
     "id": "O4",
-    "category": "Hallucination (not in KB)",
+    "category": "Grounding and hallucination check",
     "run": 3,
     "session": "lr-O4-3-227ca7d4-e617-43a0-8553-8593b99fb9a6",
-    "expected": "Says the KB doesn't contain it; no invented numbers",
+    "expected": "Answers only from the KB, with no invented details (the test assumed the policy was absent, but the handbook contains it)",
     "transcript": [
       {
         "prompt": "What is Northstar's parental leave policy, and how many weeks of paid leave do new parents get?",

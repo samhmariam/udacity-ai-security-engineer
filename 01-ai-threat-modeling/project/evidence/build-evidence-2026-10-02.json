@@ -1,0 +1,103 @@
+{
+  "note": "Read-only API outputs captured from account 911470903119 (us-east-1). Harness/KB/ingestion outputs captured 2026-10-02 21:2x UTC; transcripts captured 2026-10-03 by launch-readiness/run_edge_cases.py (harness version 2).",
+  "harness_at_capture": {
+    "harnessName": "NorthstarAssist",
+    "harnessId": "NorthstarAssist-yH4PMorNwm",
+    "status": "READY",
+    "harnessVersion": "1",
+    "model": {
+      "bedrockModelConfig": {
+        "modelId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "apiFormat": "converse_stream"
+      }
+    },
+    "tools": [
+      {
+        "type": "agentcore_gateway",
+        "name": "northstar-assist-gateway-bkdy1kxxxm",
+        "config": {
+          "agentCoreGateway": {
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-east-1:911470903119:gateway/northstar-assist-gateway-bkdy1kxxxm",
+            "outboundAuth": {
+              "awsIam": {}
+            }
+          }
+        }
+      }
+    ],
+    "systemPrompt": [
+      {
+        "text": "You are Northstar Assist, Northstar Technologies' internal employee assistant. Your job is to help Northstar employees find accurate answers to questions about company policies, procedures, and internal documentation. Always search the Northstar knowledge base tool before answering a question about Northstar. Base your answers only on the retrieved documents and name the source document you used. Do not make up policy details. If the knowledge base does not contain relevant information, say so clearly. Do not guess. Do not discuss topics unrelated to Northstar operations.\n"
+      }
+    ]
+  },
+  "knowledge_base": {
+    "name": "northstar-assist-kb",
+    "knowledgeBaseId": "ZCAWWBRBXU",
+    "status": "ACTIVE",
+    "knowledgeBaseConfiguration": {
+      "type": "MANAGED",
+      "managedKnowledgeBaseConfiguration": {
+        "embeddingModelType": "CUSTOM",
+        "embeddingModelArn": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+        "embeddingModelConfiguration": {
+          "bedrockEmbeddingModelConfiguration": {
+            "dimensions": 1024,
+            "embeddingDataType": "FLOAT32"
+          }
+        }
+      }
+    }
+  },
+  "data_source": {
+    "name": "northstar-documents",
+    "dataSourceId": "NTXBJ668Z7",
+    "status": "AVAILABLE"
+  },
+  "ingestion_jobs": [
+    {
+      "knowledgeBaseId": "ZCAWWBRBXU",
+      "dataSourceId": "NTXBJ668Z7",
+      "ingestionJobId": "ZPFE9LWPAN",
+      "status": "COMPLETE",
+      "startedAt": "2026-10-02 16:43:54.347216+00:00",
+      "updatedAt": "2026-10-02 16:47:27.017355+00:00",
+      "statistics": {
+        "numberOfDocumentsScanned": 30,
+        "numberOfMetadataDocumentsScanned": 0,
+        "numberOfNewDocumentsIndexed": 30,
+        "numberOfModifiedDocumentsIndexed": 0,
+        "numberOfMetadataDocumentsModified": 0,
+        "numberOfDocumentsDeleted": 0,
+        "numberOfDocumentsFailed": 0,
+        "numberOfDocumentsSkipped": 0
+      }
+    }
+  ],
+  "transcripts": {
+    "hybrid_work_policy (D4 run 1, turn 1)": {
+      "prompt": "What is Northstar's hybrid work policy?",
+      "stop_reason": "end_turn",
+      "answer": "I'll search the Northstar knowledge base for information about the hybrid work policy.Based on the Northstar knowledge base, here is Northstar's **Hybrid Work Policy** (from the **Company Policies Handbook**):\n\n**Hybrid Work Arrangement:**\n- Employees may work remotely up to **3 days per week**\n- Minimum **2 days per week in-office** (typically Tuesday-Thursday)\n- Remote work days should be coordinated with your team and manager\n- Fully remote positions are available for certain roles (as specified in the job description)\n\n**Work Schedule:**\n- **Standard Hours:** Monday through Friday, 9:00 AM - 6:00 PM local time\n- **Core Hours:** 10:00 AM - 3:00 PM (required presence for meetings/collaboration)\n- **Flexible Hours:** Employees may adjust start/end times with manager approval\n\n**Remote Work Requirements:**\n- Reliable high-speed internet connection\n- Dedicated, quiet workspace\n- Availability during core hours via Slack/email\n- Attendance at scheduled video meetings with camera on\n- Compliance with information security policies\n\nThis policy applies to eligible positions, so eligibility may vary depending on your specific role.",
+      "kb_retrieval_queries_from_invocation_log": [
+        "hybrid work policy"
+      ],
+      "model_calls_in_window": 4,
+      "inference_regions": [
+        "ap-southeast-4"
+      ]
+    },
+    "parental_leave (O4 run 1)": {
+      "prompt": "What is Northstar's parental leave policy, and how many weeks of paid leave do new parents get?",
+      "stop_reason": "end_turn",
+      "answer": "I'll search the Northstar knowledge base for information about the parental leave policy.Based on Northstar's company policies, here is the parental leave policy:\n\n**Parental Leave Policy:**\n\nAccording to the **Company Policies Handbook**, Northstar offers the following paid parental leave for birth or adoption:\n\n- **Primary Caregivers**: 16 weeks of paid leave\n- **Secondary Caregivers**: 8 weeks of paid leave\n\n**Important Details:**\n- Leave must be taken within 12 months of the birth or adoption\n- This applies to both birth and adoption scenarios\n\nSo to directly answer your question: new parents get either **16 weeks** (if the primary caregiver) or **8 weeks** (if the secondary caregiver) of paid leave through Northstar's parental leave policy.",
+      "kb_retrieval_queries_from_invocation_log": [
+        "parental leave policy paid weeks new parents"
+      ],
+      "model_calls_in_window": 2,
+      "inference_regions": [
+        "ap-southeast-4"
+      ]
+    }
+  }
+}

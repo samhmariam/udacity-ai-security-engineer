@@ -1,0 +1,140 @@
+{
+  "captured_at_utc": "2026-10-03T11:30:54Z",
+  "harness": {
+    "name": "NorthstarAssist",
+    "id": "NorthstarAssist-yH4PMorNwm",
+    "status": "READY",
+    "version": "2",
+    "model_id": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "api_format": "converse_stream",
+    "guardrail": {
+      "streamProcessingMode": "sync",
+      "guardrailVersion": "1",
+      "trace": "enabled",
+      "guardrailIdentifier": "arn:aws:bedrock:us-east-1:911470903119:guardrail/bzgydako86r9"
+    },
+    "tools": [
+      {
+        "type": "agentcore_gateway",
+        "gateway": "northstar-assist-gateway-bkdy1kxxxm"
+      }
+    ]
+  },
+  "transcript": {
+    "runtimeSessionId": "evidence-60d82698-9d74-4dd8-a800-6f5c94736314",
+    "prompt": "What is Northstar's hybrid work policy? Name the source document.",
+    "streamed_tool_calls": [
+      "northstar-kb___Retrieve"
+    ],
+    "stop_reasons": [
+      "tool_use",
+      "tool_result",
+      "end_turn"
+    ],
+    "answer": "I'll search the Northstar knowledge base for information about the hybrid work policy.Based on the Northstar knowledge base, here is Northstar's hybrid work policy:\n\n**Hybrid Work Policy:**\n\nNorthstar offers a hybrid work arrangement for eligible positions with the following guidelines:\n\n- **Remote Work Allowance:** Employees may work remotely up to 3 days per week\n- **In-Office Requirement:** Minimum 2 days per week in-office (typically Tuesday-Thursday)\n- **Coordination:** Remote work days should be coordinated with team/manager\n- **Fully Remote Positions:** Available for certain roles (as specified in job description)\n\n**Core Hours:** 10:00 AM - 3:00 PM (required presence for meetings/collaboration)\n\n**Remote Work Requirements:**\n- Reliable high-speed internet connection\n- Dedicated, quiet workspace\n- Availability during core hours via Slack/email\n- Attendance at scheduled video meetings with camera on\n- Compliance with information security policies\n\n**Source Document:** Company Policies Handbook (company_policies_handbook.html)",
+    "event_counts": {
+      "contentBlockDelta": 112,
+      "contentBlockStart": 2,
+      "contentBlockStop": 4,
+      "messageStart": 3,
+      "messageStop": 3,
+      "metadata": 2
+    }
+  },
+  "invocation_log_records": [
+    {
+      "timestamp": "2026-10-03T11:30:59Z",
+      "operation": "ConverseStream",
+      "modelId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "role_session": "AmazonBedrockAgentCoreHarnessDefaultServiceRole-p0869/BedrockAgentCore-4d7b0a5c-70a7-42d8-9021-848f729add55",
+      "stopReason": "tool_use",
+      "inputTokens": 1177,
+      "outputTokens": 84,
+      "inferenceRegion": "ap-southeast-4",
+      "guardrail_applied": true,
+      "tool_use": {
+        "name": "northstar-kb___Retrieve",
+        "input": {
+          "retrievalQuery": {
+            "text": "hybrid work policy"
+          }
+        }
+      }
+    },
+    {
+      "timestamp": "2026-10-03T11:31:01Z",
+      "operation": "InvokeModel",
+      "modelId": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+      "role_session": "AmazonBedrockExecutionRoleForKnowledgeBase_6s5f0/MANAGED_KB_EMBED-911470903119-ZCAWWBRBXU",
+      "embedded_retrieval_query": "hybrid work policy"
+    },
+    {
+      "timestamp": "2026-10-03T11:31:02Z",
+      "operation": "ConverseStream",
+      "modelId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "role_session": "AmazonBedrockAgentCoreHarnessDefaultServiceRole-p0869/BedrockAgentCore-4d7b0a5c-70a7-42d8-9021-848f729add55",
+      "stopReason": "end_turn",
+      "inputTokens": 3888,
+      "outputTokens": 230,
+      "inferenceRegion": "ap-southeast-4",
+      "guardrail_applied": true,
+      "retrieved_chunks": [
+        {
+          "source": "https://northstar-assist-kb-chrst.s3.amazonaws.com/northstar-knowledge-base/html/company_policies_handbook.html",
+          "score": 0.9985,
+          "excerpt": "Workplace Guidelines Work Schedule Standard Hours: Monday through Friday, 9:00 AM - 6:00 PM local time Core Hours: 10:00 AM - 3:00 PM (required presence for mee"
+        },
+        {
+          "source": "https://northstar-assist-kb-chrst.s3.amazonaws.com/northstar-knowledge-base/docx/security_policy.docx",
+          "score": 0.9328,
+          "excerpt": "13. Policy Review Annually (minimum) After significant security incidents When regulatory requirements change When business operations significantly change Docu"
+        },
+        {
+          "source": "https://northstar-assist-kb-chrst.s3.amazonaws.com/northstar-knowledge-base/html/company_policies_handbook.html",
+          "score": 0.8964,
+          "excerpt": "This includes but is not limited to harassment based on race, gender, religion, sexual orientation, disability, or any other protected characteristic. Reporting"
+        },
+        {
+          "source": "https://northstar-assist-kb-chrst.s3.amazonaws.com/northstar-knowledge-base/html/company_policies_handbook.html",
+          "score": 0.8688,
+          "excerpt": "Employment Classification Our Values Company Overview Founded in 2019, Northstar Technologies is a mid-size SaaS company headquartered in Seattle, Washington, w"
+        },
+        {
+          "source": "https://northstar-assist-kb-chrst.s3.amazonaws.com/northstar-knowledge-base/html/company_policies_handbook.html",
+          "score": 0.8626,
+          "excerpt": "Limited personal use is acceptable provided it: Does not interfere with work responsibilities Does not violate company policies or law Does not consume excessiv"
+        }
+      ]
+    }
+  ],
+  "knowledge_base": {
+    "name": "northstar-assist-kb",
+    "id": "ZCAWWBRBXU",
+    "status": "ACTIVE",
+    "embedding_model": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+    "data_source": {
+      "name": "northstar-documents",
+      "id": "NTXBJ668Z7",
+      "status": "AVAILABLE"
+    },
+    "ingestion_jobs": [
+      {
+        "id": "ZPFE9LWPAN",
+        "status": "COMPLETE",
+        "started": "2026-10-02 16:43:54.347216+00:00",
+        "completed": "2026-10-02 16:47:27.017355+00:00",
+        "statistics": {
+          "numberOfDocumentsScanned": 30,
+          "numberOfMetadataDocumentsScanned": 0,
+          "numberOfNewDocumentsIndexed": 30,
+          "numberOfModifiedDocumentsIndexed": 0,
+          "numberOfMetadataDocumentsModified": 0,
+          "numberOfDocumentsDeleted": 0,
+          "numberOfDocumentsFailed": 0,
+          "numberOfDocumentsSkipped": 0
+        },
+        "failureReasons": []
+      }
+    ]
+  }
+}

@@ -19,6 +19,7 @@ This folder contains the deliverables for each project task, the scripts used to
 
 | Task | Deliverable | What it covers |
 |---|---|---|
+| Build the agent and harness | [evidence/Build Evidence.md](evidence/Build%20Evidence.md) | Playground screenshot and live `InvokeHarness` transcripts showing Claude Haiku 4.5 answering from retrieved knowledge base content. The knowledge base sync job (30/30 documents indexed, 0 failed). |
 | AI asset inventory | [Northstar Assist ML-BOM.md](Northstar%20Assist%20ML-BOM.md) | Both models (Claude Haiku 4.5, Titan Text Embeddings V2), with what is and isn't known about their training data. The knowledge source, S3, the vector store, the gateway, the harness and the three IAM roles, all read from the deployed account. Findings F-01 to F-09. |
 | Threat model | [Northstar Assist STRIDE-ML Threat Model.md](Northstar%20Assist%20STRIDE-ML%20Threat%20Model.md) | Data assets, 8 trust boundaries along the request and retrieval path, and 16 threats across all STRIDE categories, scored and ranked (direct and indirect injection, data exposure, misuse). Mitigations, residual risks and recommendations. |
 | Least-privilege access | [iam-least-privilege/Northstar Assist IAM Least-Privilege Changes.md](iam-least-privilege/Northstar%20Assist%20IAM%20Least-Privilege%20Changes.md) | Before and after comparison of the harness and gateway roles, with the reason for each change and an attacker's-eye view. A 31-case policy evaluation (all pass), and a mandatory-guardrail IAM Deny. |
@@ -53,6 +54,7 @@ All changes are in account `911470903119`, `us-east-1`, and every one can be rol
 
 | Path | Contents |
 |---|---|
+| `evidence/` | Build evidence: harness, retrieval and knowledge base sync outputs, and `capture_build_evidence.py` to re-capture them |
 | `Northstar Assist ML-BOM.md`, `Northstar Assist STRIDE-ML Threat Model.md` | Inventory and threat model deliverables |
 | `ML-BOM Template.md`, `STRIDE-ML Template.md` | The course templates, converted from `.docx` |
 | `iam-least-privilege/` | IAM report, original (`before/`) and applied (`after/`) policy documents, and policy evaluation results |

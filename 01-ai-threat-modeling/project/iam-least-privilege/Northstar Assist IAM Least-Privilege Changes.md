@@ -182,6 +182,33 @@ The IAM policy simulator (`iam:SimulateCustomPolicy`) is denied in the Cloud Lab
 
 **Earlier blocker, now resolved.** Claude Haiku 4.5 needs an account-level AWS Marketplace subscription. On 2026-10-02 no principal in the lab account could create it, so every Haiku call failed regardless of IAM. By 2026-10-03 the subscription was active, and the end-to-end check above passed.
 
+### 5.3 No-wildcard check: every remaining wildcard and why it stays
+
+**Wildcard actions: none.** No applied policy (`after/`: harness execution policy v3, harness gateway policy, `NorthstarRequireGuardrail`, and both gateway policies) contains a `*` in any `Action`. Before the change, the harness and gateway roles had no wildcard actions either, but they had broad wildcard **resources** (`foundation-model/*`, `arn:aws:bedrock:us-east-1:911470903119:*`, `browser/*`, `code-interpreter/*`, `file-system/*`, `memory/NorthstarAssist-*`, and `AgenticRetrieveStream`/`Rerank`/`ApplyGuardrail` on `*`). All of those were removed or scoped.
+
+**Wildcard resources that remain:** 14 statements, found by scanning every statement in `after/`.
+
+| # | Policy · statement | Wildcard resource | Kind | Justification |
+|---|---|---|---|---|
+| 1 | Harness exec · `InvokeHaikuFoundationModelOnlyThroughProfile` | `arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0` (and the Region-less `arn:aws:bedrock:::…` form) | Region only | The **global** inference profile routes each request to a Region chosen at run time (observed: `ap-southeast-4`), so the destination Region can't be listed in advance. The model is fixed to Haiku 4.5, and the condition `bedrock:InferenceProfileArn` = the Northstar profile means it can **only** be called through that profile. A direct call (evaluation case H4) and other models (H5) are denied. |
+| 2 | Harness exec · `ApplyNorthstarGuardrailOnly` | `…:guardrail/bzgydako86r9:*` | Version suffix only | Lets the harness apply any **version** of the Northstar guardrail, so a new version can be published and attached without an IAM change. No other guardrail can be applied. |
+| 3 | Harness exec · `EcrManagedImagePull` | `arn:aws:ecr:us-east-1:*:repository/harness-*` | Account and name prefix | The managed harness container image lives in an **AWS-owned** account that isn't published. Limited to pull actions on `harness-*` repositories in `us-east-1`. |
+| 4 | Harness exec · `EcrAuthorizationTokens` | `*` | Full | `ecr:GetAuthorizationToken` and `ecr-public:GetAuthorizationToken` **don't support resource-level permissions** (AWS requires `*`). A token grants nothing on its own, because pulls still need #3. |
+| 5 | Harness exec · `StsBearerTokenForEcrPublicOnly` | `*` | Full, with a condition | `sts:GetServiceBearerToken` doesn't support resource-level permissions. The condition `sts:AWSServiceName = ecr-public.amazonaws.com` limits it to ECR Public. A token for any other service is denied (case H16). |
+| 6 | Harness exec · `XRayTracingAccess` | `*` | Full | `xray:PutTraceSegments`, `PutTelemetryRecords`, `GetSamplingRules` and `GetSamplingTargets` **don't support resource-level permissions**. They only write telemetry or read sampling rules, with no access to data. |
+| 7 | Harness exec · `CloudWatchMetricsPublish` | `*` | Full, with a condition | `cloudwatch:PutMetricData` doesn't support resource-level permissions. The condition `cloudwatch:namespace = bedrock-agentcore` limits it to the harness's own metric namespace. It's write-only. |
+| 8 | Harness exec · `CloudWatchLogsOwnRuntimeGroup` | `…:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*` | Name suffix | The runtime log group name ends in a runtime ID and endpoint that AgentCore generates (`…-4tSgy4Clrq-DEFAULT`). The prefix limits it to Northstar's own group. Other agents' groups are denied (case H18). |
+| 9 | Harness exec · `CloudWatchLogsOwnRuntimeStreams` | `…:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*:log-stream:*` | Name suffix and stream | Stream names are generated per runtime session, so they can't be listed in advance. Limited to Northstar's own log group. |
+| 10 | Harness exec · `CloudWatchLogsPutResourcePolicy` | `…:log-group:/aws/bedrock-agentcore/runtimes/harness_NorthstarAssist-*` | Name suffix | Same as #8. This was already scoped by the console. |
+| 11 | Harness exec · `CloudWatchLogsDescribeGroups` | `…:log-group:*` | All groups in the account and Region | `logs:DescribeLogGroups` is a list operation that works on the account's log groups. It returns **metadata only** (names, retention), never log contents. The runtime uses it to find its own group. |
+| 12 | Harness exec · `AgentCoreWorkloadIdentity` | `…:workload-identity/harness_NorthstarAssist-*` | Name suffix | The workload identity name includes a generated runtime ID. Limited to Northstar's own identity. This was already scoped by the console. |
+| 13 | Gateway base · `GetConfigurationBundleVersion` | `…:configuration-bundle/*` | IDs | Configuration bundle IDs are created and managed by AgentCore for the gateway runtime and aren't exposed. Read-only, and limited by `aws:ResourceAccount = ${aws:PrincipalAccount}` and `aws:RequestedRegion = us-east-1`. |
+| 14 | `NorthstarRequireGuardrail` (inline **Deny**) | `*` | Full, **Deny** | A wildcard in a **Deny** narrows access. It refuses `InvokeModel*` on **every** model unless the request uses the Northstar guardrail. Scoping it to particular models would leave the other models unguarded. |
+
+**Exact ARNs (no wildcard):** the harness gateway policy (`InvokeGateway` on the one gateway) and, apart from #13, every gateway-role resource: `knowledge-base/ZCAWWBRBXU` for `Retrieve`, `GetKnowledgeBase` and `AgenticRetrieveStream`, `foundation-model/amazon.titan-embed-text-v2:0`, and the exact gateway ARN.
+
+**Conclusion:** the agent role can reach only its one model (Haiku 4.5, through its own profile), its one gateway, its one guardrail, and its own logs, metrics, traces and container image. The gateway role can reach only its one knowledge base and the embedding model. Each remaining wildcard covers either an AWS API that doesn't support resource-level permissions, a name AWS generates at run time inside a Northstar-specific prefix, or a Deny.
+
 ------------------------------------------------------------------------
 
 ## 6. Guardrail Permissions (applied 2026-10-03)
@@ -212,7 +239,7 @@ These items are outside the two service roles. They remain open in the threat mo
 - **Who may call `InvokeHarness`** (S-01, E-02). The per-call model, prompt and tool override is still available to any principal with `bedrock-agentcore:InvokeHarness`. The scoped role now limits *what an override can do*, but `InvokeHarness` should also be restricted to the client app's dedicated role.
 - **`allowedTools: ["*"]` on the harness.** Pin it to the Retrieve tool so that new gateway targets aren't exposed automatically.
 - **What the KB contains** (I-01). Least privilege on roles doesn't stop authorized retrieval of PII. Fix that with data minimization or document-level access control.
-- **Remaining wildcard resources.** `ecr:GetAuthorizationToken`, `ecr-public:GetAuthorizationToken`, the X-Ray actions and `logs:DescribeLogGroups` stay on `*` or `log-group:*`. These APIs don't support narrower resources (or only expose metadata), and they give no data access by themselves.
+- **Remaining wildcard resources.** Every remaining wildcard, with its justification, is listed in §5.3. None grants access to model, knowledge-base or customer data beyond what Northstar Assist needs.
 - **Console regeneration.** Editing the harness or gateway in the console may regenerate or reattach "default" policies. Re-check these roles after any console change.
 
 ------------------------------------------------------------------------
