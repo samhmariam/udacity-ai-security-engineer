@@ -8,11 +8,17 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "adversarial-robustness-toolbox==1.20.1",
     "boto3>=1.38.0",
-    "ipykernel==7.2.0",
+    "ipykernel==7.3.0",
+    "matplotlib==3.11.0",
     "nbconvert==7.17.1",
+    "numpy==2.5.0",
     "openai==2.44.0",
+    "pillow==12.2.0",
     "python-dotenv>=1.0.1",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
 ]
 
 [project.scripts]
