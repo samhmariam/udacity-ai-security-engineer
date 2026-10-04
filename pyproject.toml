@@ -9,6 +9,9 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.38.0",
+    "ipykernel==7.2.0",
+    "nbconvert==7.17.1",
+    "openai==2.44.0",
     "python-dotenv>=1.0.1",
 ]
 
