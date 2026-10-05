@@ -1,5 +1,7 @@
 # Note to the Reviewer: Northstar Assist Capstone
 
+> **Reviewing the _LLM Red Teaming_ project instead?** See [REVIEWER_NOTE_LLM_RED_TEAMING.md](REVIEWER_NOTE_LLM_RED_TEAMING.md). That project is in [`02-llm-red-teaming/project/`](02-llm-red-teaming/project/).
+
 Thank you for reviewing my project. This repository holds my work for the whole nanodegree. **The capstone for _AI Threat Modeling and Operational Defense_ (Northstar Assist: Build and Secure an AWS Bedrock RAG AI Agent) is entirely in [`01-ai-threat-modeling/project/`](01-ai-threat-modeling/project/).** Its [README](01-ai-threat-modeling/project/README.md) gives an overview, and the table below maps each rubric criterion to the evidence for it.
 
 Every deliverable is based on the **live deployment** in my Cloud Lab account (`911470903119`, `us-east-1`): the configuration was read through the AWS APIs, the controls were applied there, and every test ran against the real harness. Nothing is hypothetical.
