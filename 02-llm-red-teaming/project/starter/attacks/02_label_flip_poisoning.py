@@ -23,7 +23,7 @@ CLASSES = ["receipt", "non_receipt"]
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results", "02_label_flip")
 
 
-def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42):
+def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_class=None):
     """
     Copy dataset and flip a percentage of training labels.
 
@@ -39,6 +39,9 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42):
         target_root: Path for poisoned dataset output
         flip_ratio: Fraction of training labels to flip (default 0.10 = 10%)
         seed: Random seed for reproducibility
+        source_class: None flips flip_ratio of each class (symmetric). A class
+            name ("receipt" or "non_receipt") spends the whole budget,
+            flip_ratio of ALL training labels, on that class only (one-way).
     """
     random.seed(seed)
 
@@ -49,6 +52,8 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42):
 
     if not 0 <= flip_ratio <= 0.10:
         raise ValueError(f"flip_ratio must be in [0, 0.10], got {flip_ratio}")
+    if source_class is not None and source_class not in CLASSES:
+        raise ValueError(f"source_class must be one of {CLASSES} or None, got {source_class}")
 
     def list_images(directory):
         return sorted(
@@ -63,13 +68,18 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42):
 
     # Select files for every class before moving anything, so images moved
     # into a class folder can't be re-selected and flipped back.
+    class_files = {cls: list_images(os.path.join(train_root, cls)) for cls in CLASSES}
+    total_train = sum(len(files) for files in class_files.values())
     to_flip = {}
-    total_train = 0
-    for cls in CLASSES:
-        files = list_images(os.path.join(train_root, cls))
-        total_train += len(files)
-        n_flip = int(len(files) * flip_ratio)
-        to_flip[cls] = random.sample(files, n_flip)
+    if source_class is None:
+        for cls in CLASSES:
+            n_flip = int(len(class_files[cls]) * flip_ratio)
+            to_flip[cls] = random.sample(class_files[cls], n_flip)
+    else:
+        # Budget is a fraction of ALL training labels, so the overall rate
+        # still stays <= flip_ratio.
+        n_flip = min(int(total_train * flip_ratio), len(class_files[source_class]))
+        to_flip[source_class] = random.sample(class_files[source_class], n_flip)
 
     total_flipped = 0
     for cls, files in to_flip.items():
@@ -197,12 +207,16 @@ if __name__ == "__main__":
                              "..", "classifier", "poisoned_data"),
     )
     parser.add_argument("--flip-rate", type=float, default=0.10)
+    parser.add_argument(
+        "--source-class", choices=CLASSES, default=None,
+        help="Flip only this class (one-way). Omit for symmetric flipping.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--visualize-count", type=int, default=5)
     parser.add_argument("--results-dir", default=RESULTS_DIR)
     args = parser.parse_args()
 
-    poison_dataset(args.source, args.target, args.flip_rate, args.seed)
+    poison_dataset(args.source, args.target, args.flip_rate, args.seed, args.source_class)
     visualize_flip(
         args.source,
         args.target,

@@ -65,6 +65,27 @@ The same attack at 5% (`--flip-rate 0.05`: 56 / 1,154 flipped; `receipt_cnn_pois
 | F1 | 0.9468 | 0.9637 | +1.69 pp | 0.9081 | −3.87 pp |
 | Receipts rejected | 17 | 9 | | 32 | |
 
+### Flip direction: symmetric vs. one-way (same ~10% budget)
+
+To test whether concentrating the budget on one class would do more damage, two **one-way** variants were run with `--source-class`. Each flipped 115 labels (9.97% of all training labels) from a single class. All other settings were identical: seed 42, same `train.py` hyperparameters, same clean test set.
+
+| Variant (`02_label_flip_poisoning.py` flags) | Labels flipped | Accuracy | Precision | Recall | F1 | Δ Accuracy vs. control | Confusion matrix `[[TN, FP], [FN, TP]]` |
+|---|---|---|---|---|---|---|---|
+| Clean control | 0 | 0.9487 | 0.9834 | 0.9128 | 0.9468 | | `[[192, 3], [17, 178]]` |
+| **Symmetric (default, main run)** | 57 + 57 | 0.9154 | 0.9939 | 0.8359 | 0.9081 | **−3.33 pp** | `[[194, 1], [32, 163]]` |
+| One-way receipt → non_receipt (`--source-class receipt`) | 115 | 0.9308 | 0.8925 | 0.9795 | 0.9340 | −1.79 pp | `[[172, 23], [4, 191]]` |
+| One-way non_receipt → receipt (`--source-class non_receipt`) | 115 | 0.9436 | 0.9943 | 0.8923 | 0.9405 | −0.51 pp | `[[194, 1], [21, 174]]` |
+
+Evidence: `attacks/results/02_label_flip/poisoned_oneway_receipt/` and `poisoned_oneway_non_receipt/` (`metrics.json`, `confusion_matrix.png`).
+
+**Interpretation:**
+- **Symmetric flipping did the most damage.** It plants contradictory labels on both sides of the decision boundary, so the boundary itself becomes blurred.
+- **One-way flipping shifted the boundary rather than blurring it.** Labelling 115 receipts as "non_receipt" also shrank the receipt class (462 vs. 692 training images). One would expect the model to reject more receipts, but in this run the errors moved the *other* way (false positives 3 → 23, false negatives 17 → 4), and overall accuracy fell less.
+- **The reverse direction had almost no effect.** Labelling 115 visually diverse non-receipts as "receipt" behaves much like random noise, which supports the earlier observation that mislabelled non-receipts are mostly ignored.
+- **The counter-intuitive direction of the receipt-to-non_receipt result is a warning about single-seed variance.** With one training run per condition, effects smaller than about 2 pp should not be over-interpreted.
+
+**Consequence for the rubric's ≥ 5 pp target:** none of the three random-flip strategies within the 10% cap reached a 5 pp accuracy drop on this model. The largest was −3.33 pp (symmetric), or −2.82 pp against the provided checkpoint. This is reported as observed, per the charter's honest-reporting rule. A *non-random* selection, such as flipping the samples the clean model is least confident about or poisoning with a trigger pattern, would very likely do more damage at the same budget, but it goes beyond the random-flip method specified for this attack and was not tested.
+
 ## Confusion Matrices (Optional)
 
 Rows = true label, columns = predicted label.
@@ -129,4 +150,12 @@ python evaluate.py --model-path checkpoints/receipt_cnn_clean_retrained.pt --tes
 python ../attacks/02_label_flip_poisoning.py --flip-rate 0.05 --target poisoned_data_5
 python train.py --data-dir poisoned_data_5 --checkpoint-name receipt_cnn_poisoned_5.pt
 python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_5.pt --test-dir balanced_data/test --results-dir ../attacks/results/02_label_flip/poisoned_5
+
+# One-way variants (same 10% budget, single source class)
+python ../attacks/02_label_flip_poisoning.py --source-class receipt --target poisoned_oneway_receipt
+python train.py --data-dir poisoned_oneway_receipt --checkpoint-name receipt_cnn_poisoned_oneway.pt
+python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_oneway.pt --test-dir balanced_data/test --results-dir ../attacks/results/02_label_flip/poisoned_oneway_receipt
+python ../attacks/02_label_flip_poisoning.py --source-class non_receipt --target poisoned_oneway_non_receipt
+python train.py --data-dir poisoned_oneway_non_receipt --checkpoint-name receipt_cnn_poisoned_oneway_nr.pt
+python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_oneway_nr.pt --test-dir balanced_data/test --results-dir ../attacks/results/02_label_flip/poisoned_oneway_non_receipt
 ```

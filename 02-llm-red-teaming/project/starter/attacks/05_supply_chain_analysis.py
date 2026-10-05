@@ -227,7 +227,8 @@ def generate_report(vulns, dockerfile_issues):
     # - "dockerfile_issues": from analyze_dockerfile()
     # - "risk_assessment": overall risk level and key concerns
 
-    severity_counts = {}
+    # Always report the four standard levels, even when a count is zero
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
     for v in vulns:
         sev = v.get("severity", "UNKNOWN")
         severity_counts[sev] = severity_counts.get(sev, 0) + 1
@@ -328,10 +329,15 @@ def main():
     print(f"{'=' * 50}")
     s = report["summary"]
     print(f"\n  Total vulnerabilities: {s['total_vulnerabilities']}")
-    for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
+    for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]:
         count = s["severity_breakdown"].get(sev, 0)
-        if count:
+        if count or sev != "UNKNOWN":
             print(f"    {sev}: {count}")
+
+    print(f"\n  Top HIGH severity CVEs (fixable first):")
+    for v in report["high_severity_vulnerabilities"][:5]:
+        fix = v["fixed_version"] or "no fix available"
+        print(f"    {v['id']}  {v['package']} {v['installed_version']} -> {fix}")
 
     print(f"\n  Dockerfile issues: {s['dockerfile_issues']}")
     print(f"{'=' * 50}")
