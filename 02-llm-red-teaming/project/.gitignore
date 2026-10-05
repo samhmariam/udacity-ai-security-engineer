@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.jpg
+.env
+.env.example
+*.pt
+!starter/classifier/checkpoints/receipt_cnn_clean.pt
+faiss_index/
+poisoned_data/
+.DS_Store
+_cifar_cache/
+_dataset_cache/
+*.json
+!starter/06_trivy_report.json
