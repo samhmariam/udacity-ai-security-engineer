@@ -21,9 +21,41 @@ import matplotlib.pyplot as plt
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
 CLASSES = ["receipt", "non_receipt"]
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results", "02_label_flip")
+CLASSIFIER_DIR = os.path.join(os.path.dirname(__file__), "..", "classifier")
+SELECTIONS = ["random", "confident", "boundary"]
 
 
-def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_class=None):
+def score_true_class_confidence(model_path, image_dir, cls, files):
+    """
+    Return {filename: confidence in its TRUE class} from the clean model.
+
+    The model outputs P(receipt); confidence in the true class is P for
+    receipt images and 1 - P for non_receipt images.
+    """
+    import sys
+    import torch
+    from PIL import Image
+
+    sys.path.insert(0, CLASSIFIER_DIR)
+    from model import ReceiptCNN
+    from data import get_transform
+
+    model = ReceiptCNN()
+    model.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=True))
+    model.eval()
+    transform = get_transform(train=False)
+
+    scores = {}
+    with torch.no_grad():
+        for f in files:
+            image = Image.open(os.path.join(image_dir, f)).convert("RGB")
+            p_receipt = model(transform(image).unsqueeze(0)).item()
+            scores[f] = p_receipt if cls == "receipt" else 1 - p_receipt
+    return scores
+
+
+def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_class=None,
+                   selection="confident", model_path=None):
     """
     Copy dataset and flip a percentage of training labels.
 
@@ -42,6 +74,14 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_cl
         source_class: None flips flip_ratio of each class (symmetric). A class
             name ("receipt" or "non_receipt") spends the whole budget,
             flip_ratio of ALL training labels, on that class only (one-way).
+        selection: How files to flip are chosen within each class:
+            "random"    - uniform random sample (seeded)
+            "confident" - images the clean model is MOST confident about
+                          (the clearest, most prototypical examples)
+            "boundary"  - images the clean model is LEAST confident about
+                          (closest to the decision boundary)
+            Targeted selections need model_path (the clean checkpoint).
+        model_path: Clean model checkpoint used to score training images.
     """
     random.seed(seed)
 
@@ -54,6 +94,10 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_cl
         raise ValueError(f"flip_ratio must be in [0, 0.10], got {flip_ratio}")
     if source_class is not None and source_class not in CLASSES:
         raise ValueError(f"source_class must be one of {CLASSES} or None, got {source_class}")
+    if selection not in SELECTIONS:
+        raise ValueError(f"selection must be one of {SELECTIONS}, got {selection}")
+    if selection != "random" and not model_path:
+        raise ValueError(f"selection={selection!r} requires model_path")
 
     def list_images(directory):
         return sorted(
@@ -70,16 +114,32 @@ def poison_dataset(source_root, target_root, flip_ratio=0.10, seed=42, source_cl
     # into a class folder can't be re-selected and flipped back.
     class_files = {cls: list_images(os.path.join(train_root, cls)) for cls in CLASSES}
     total_train = sum(len(files) for files in class_files.values())
+
+    def pick(cls, n_flip):
+        files = class_files[cls]
+        if selection == "random":
+            return random.sample(files, n_flip)
+        scores = score_true_class_confidence(
+            model_path, os.path.join(train_root, cls), cls, files
+        )
+        # Sort by confidence (filename breaks ties so the order is deterministic)
+        ranked = sorted(files, key=lambda f: (scores[f], f),
+                        reverse=(selection == "confident"))
+        chosen = ranked[:n_flip]
+        conf = [scores[f] for f in chosen]
+        print(f"  {cls}: selected {n_flip} by '{selection}' "
+              f"(true-class confidence {min(conf):.3f}-{max(conf):.3f})" if conf else "")
+        return chosen
+
     to_flip = {}
     if source_class is None:
         for cls in CLASSES:
-            n_flip = int(len(class_files[cls]) * flip_ratio)
-            to_flip[cls] = random.sample(class_files[cls], n_flip)
+            to_flip[cls] = pick(cls, int(len(class_files[cls]) * flip_ratio))
     else:
         # Budget is a fraction of ALL training labels, so the overall rate
         # still stays <= flip_ratio.
         n_flip = min(int(total_train * flip_ratio), len(class_files[source_class]))
-        to_flip[source_class] = random.sample(class_files[source_class], n_flip)
+        to_flip[source_class] = pick(source_class, n_flip)
 
     total_flipped = 0
     for cls, files in to_flip.items():
@@ -211,12 +271,22 @@ if __name__ == "__main__":
         "--source-class", choices=CLASSES, default=None,
         help="Flip only this class (one-way). Omit for symmetric flipping.",
     )
+    parser.add_argument(
+        "--selection", choices=SELECTIONS, default="confident",
+        help="How images to flip are chosen (targeted options use the clean model).",
+    )
+    parser.add_argument(
+        "--model-path",
+        default=os.path.join(CLASSIFIER_DIR, "checkpoints", "receipt_cnn_clean.pt"),
+        help="Clean checkpoint used by targeted selections.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--visualize-count", type=int, default=5)
     parser.add_argument("--results-dir", default=RESULTS_DIR)
     args = parser.parse_args()
 
-    poison_dataset(args.source, args.target, args.flip_rate, args.seed, args.source_class)
+    poison_dataset(args.source, args.target, args.flip_rate, args.seed, args.source_class,
+                   args.selection, args.model_path)
     visualize_flip(
         args.source,
         args.target,

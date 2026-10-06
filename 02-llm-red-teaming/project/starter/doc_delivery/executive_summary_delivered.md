@@ -7,14 +7,14 @@
 
 ## Overview
 
-We tested FinanceGuard's two expense AI systems, the **receipt checker** that decides whether an uploaded image is a valid receipt and the **policy chatbot** that answers employee expense questions, together with the **software package used to deploy them**. We ran five realistic attacks in an isolated test environment with no production impact. **Overall risk: HIGH, with one CRITICAL finding that needs action this week.** Any employee can obtain the company's confidential executive pay data from the policy chatbot simply by asking for it, and we did so in 6 of 6 attempts. The receipt checker can be fooled by image changes a reviewer would not notice. The deployment package exposes a live service password and runs with more privileges than it needs. The chatbot resisted every attempt to override its instructions, which is good news, but that resistance did not stop the data leak.
+We tested FinanceGuard's two expense AI systems, the **receipt checker** that decides whether an uploaded image is a valid receipt and the **policy chatbot** that answers employee expense questions, together with the **software package used to deploy them**. We ran five realistic attacks in an isolated test environment with no production impact. **Overall risk: HIGH, with one CRITICAL finding that needs action this week.** Any employee can obtain the company's confidential executive pay data from the policy chatbot simply by asking for it, and we did so in 6 of 6 attempts. The receipt checker can be fooled by image changes a reviewer would not notice, and quietly corrupting a small part of its training data teaches it to approve non-receipts. The deployment package exposes a live service password and runs with more privileges than it needs. The chatbot resisted every attempt to override its instructions, which is good news, but that resistance did not stop the data leak.
 
 ## Risk Dashboard
 
 | System | Risk Level | Key Finding |
 |--------|-----------|-------------|
 | RAG Chatbot (policy assistant) | **CRITICAL** | Confidential executive compensation data (salary bands, bonus formulas, stock option terms) disclosed to anyone who asks; 6 / 6 attempts succeeded |
-| Receipt Classifier | **HIGH** | Images altered in ways invisible to a reviewer cause genuine receipts to be rejected and some non-receipts to be accepted; accuracy drops from 94% to 51% |
+| Receipt Classifier | **HIGH** | Images altered in ways invisible to a reviewer cause genuine receipts to be rejected and some non-receipts to be accepted (accuracy 94% → 51%). Separately, corrupting under 10% of its training data made it approve about 1 in 6 non-receipts |
 | Deployment Infrastructure | **HIGH** | The deployment package would contain the live AI-service password, runs with full administrator rights, and uses software with a known takeover flaw |
 
 ## Findings Summary
@@ -46,15 +46,15 @@ We tested FinanceGuard's two expense AI systems, the **receipt checker** that de
 - **Full takeover from a single weakness.** One exploitable flaw would hand an attacker full control: they could steal data, silently replace the AI models, or change the policies the chatbot gives employees.
 - **Low cost to fix.** The fixes are standard practice and inexpensive.
 
-### 4. Training data can be quietly corrupted — MEDIUM
+### 4. Training data can be quietly corrupted to approve non-receipts — HIGH
 
-**What we found:** Someone with access to the receipt checker's training data mislabelled 10% of the examples. The images themselves were unchanged. The retrained checker became noticeably worse at recognising genuine receipts: rejections nearly doubled, from about 1 in 11 to 1 in 6. Its headline accuracy fell only 3 points, and one common quality measure actually *improved*.
+**What we found:** Someone with access to the receipt checker's training data mislabelled fewer than 10% of the examples. They chose them carefully, using the checker itself to pick the clearest examples. The images themselves were unchanged. The retrained checker went from accepting about 1 in 65 non-receipt images as receipts to **about 1 in 6**, and its overall accuracy fell from 95% to 88%. Mislabelling the same number of examples at random did only about half the damage.
 
 **Business Impact:**
-- **A stealthy, insider-style attack.** It looks like ordinary model variation and would likely pass routine checks.
-- **Rising costs.** Employees would see more legitimate claims rejected, increasing review costs.
-- **More targeted attacks would be worse.** A more targeted version of this attack, which we did not test, could plant hidden "backdoors" that approve specific fraudulent submissions.
-- **The root cause is missing controls on who can change training data.**
+- **A lasting fraud path.** Once the checker is retrained on the corrupted data, ordinary non-receipt images get approved as receipts, with no further effort by the attacker.
+- **Hard to notice.** The corrupted examples look exactly like genuine ones, and the checker actually rejects *fewer* real receipts, so it appears to be working better.
+- **An insider or supply-chain risk.** It requires someone who can change the training data, so access control and change tracking on that data are the key defences.
+- **Targeted attacks are the realistic threat.** A careful attacker achieves much more with the same small effort, so the size of a data change is not a good guide to its risk.
 
 ### 5. Chatbot relies on the AI alone to resist manipulation — MEDIUM
 
@@ -74,7 +74,7 @@ We tested FinanceGuard's two expense AI systems, the **receipt checker** that de
 | 3 | **Add user sign-in and access rules to the chatbot,** so each person retrieves only documents they are entitled to see; add an automatic filter that blocks restricted figures in answers | **Medium** (2–4 weeks) | **High:** permanent fix for the data leak; allows restricted content to be served safely to authorised staff later |
 | 4 | **Stop fully automated receipt decisions:** send borderline and low-confidence cases to human review, and add independent checks (reading the amount, merchant and date; duplicate detection) | **Medium** (weeks) | **High:** removes the fraud path while the model is hardened |
 | 5 | **Harden the receipt checker** against manipulated images (robustness training, image clean-up before analysis) | **Medium–High** (1–2 months) | **Medium–High:** reduces fraud and rejection-attack success |
-| 6 | **Protect the AI supply chain:** lock down and track who can change training data and models, digitally verify model files before use, and add checks that compare each new model's per-category accuracy with the previous one | **Medium** (1–2 months) | **Medium:** prevents silent model corruption and tampering |
+| 6 | **Protect the AI supply chain:** lock down and track who can change training data and models, digitally verify model files before use, and add checks that compare each new model's per-category accuracy with the previous one | **Medium** (1–2 months) | **High:** closes the training-data fraud path and prevents silent model tampering |
 | 7 | **Make AI security testing routine:** re-run these five attacks automatically whenever models, documents or software change | **Low** (once the above is in place) | **Medium:** catches regressions before they reach employees |
 
 ## Conclusion

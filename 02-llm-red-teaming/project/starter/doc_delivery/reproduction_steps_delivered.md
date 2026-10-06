@@ -25,20 +25,53 @@ pip install -r requirements.txt
 # Alternative with uv (reads pyproject.toml / uv.lock):
 #   uv sync          and then prefix each python command with:  uv run
 
-# Configure the chatbot's API credentials (never commit this file)
+# Configure the chatbot's API credentials (never commit this file; it is git-ignored)
 cp starter/.env.example starter/rag_chatbot/.env
-# edit starter/rag_chatbot/.env -> set OPENAI_API_KEY and OPENAI_BASE_URL
+# then edit starter/rag_chatbot/.env and replace the placeholder key with your own
 ```
 
-**Expected:** dependencies install without errors. `python -c "import torch, faiss, flask; print(torch.__version__)"` prints `2.5.1`.
+`starter/.env.example` is committed and contains only placeholders:
+
+```
+OPENAI_API_KEY=your-vocareum-api-key-here
+OPENAI_BASE_URL=https://openai.vocareum.com/v1
+```
+
+If the template is missing, create the file directly:
+
+```bash
+cat > starter/rag_chatbot/.env <<'EOF'
+OPENAI_API_KEY=<your OpenAI-compatible API key>
+OPENAI_BASE_URL=https://openai.vocareum.com/v1
+EOF
+```
+
+`OPENAI_BASE_URL` is the Udacity Vocareum proxy used for this project. With a standard OpenAI key, use `https://api.openai.com/v1` instead. `rag.py` loads both variables with `python-dotenv`. The chatbot uses `text-embedding-3-small` and `gpt-4o-mini`, so the key must have access to both.
+
+**Expected:**
+- Dependencies install without errors, and `python -c "import torch, faiss, flask; print(torch.__version__)"` prints `2.5.1`.
+- `grep -c "^OPENAI_" starter/rag_chatbot/.env` prints `2`.
 
 ## Step 1: Prepare Dataset
 
-The balanced dataset is **already provided** in `starter/classifier/balanced_data/` (train: 577 receipt + 577 non_receipt; test: 195 + 195). No action is needed. Verify the counts:
+**The exact dataset used for every result is committed in the repository** at `starter/classifier/balanced_data/`. It has 1,544 JPEGs (28 MB) and is the course-supplied balanced receipt dataset, copied unchanged from the Udacity project workspace (`starter/classifier/balanced_data/`). A clone of the repository already contains it, so no download or preparation is needed. Required layout (`ImageFolder` format; class index `non_receipt = 0`, `receipt = 1`):
+
+```
+starter/classifier/balanced_data/
+├── train/
+│   ├── non_receipt/   577 images  (openimages_XXXX.jpg)
+│   └── receipt/       577 images  (NNNN-receipt.jpg, X5100XXXXXXX.jpg)
+└── test/
+    ├── non_receipt/   195 images
+    └── receipt/       195 images
+```
+
+Verify the counts and that the files are byte-identical to the ones used in this assessment:
 
 ```bash
 cd starter/classifier
 for d in balanced_data/*/*; do echo "$d $(ls "$d" | wc -l)"; done
+sha256sum -c --quiet balanced_data_SHA256SUMS.txt && echo "dataset verified"
 ```
 
 **Expected:**
@@ -47,13 +80,27 @@ balanced_data/test/non_receipt 195
 balanced_data/test/receipt 195
 balanced_data/train/non_receipt 577
 balanced_data/train/receipt 577
+dataset verified
 ```
 
-<details><summary>Rebuilding from raw data (only if you have the original unbalanced dataset)</summary>
+`balanced_data_SHA256SUMS.txt` lists a SHA-256 hash for each of the 1,544 images. Any missing or altered file is reported by name. On macOS, use `shasum -a 256 -c` instead of `sha256sum -c`.
+
+<details><summary>Rebuilding from a raw, unbalanced dataset (not needed for reproduction)</summary>
+
+The raw unbalanced dataset that the course balanced is not distributed with the project; only the balanced result is. `data.py` documents how it was produced: keep every receipt, and randomly downsample non-receipts (seed 42) to the same count, separately for each split. To rebuild from your own raw data, arrange it as:
+
+```
+<raw_root>/train/receipt/       <raw_root>/train/non_receipt/
+<raw_root>/test/receipt/        <raw_root>/test/non_receipt/
+```
+
+then run:
 
 ```bash
-python data.py --source /path/to/raw/data --target balanced_data   # downsamples non_receipt, seed 42
+python data.py --source <raw_root> --target balanced_data_rebuilt
 ```
+
+Here `<raw_root>` is the directory containing those `train/` and `test/` folders. A rebuilt dataset will **not** match the checksums above unless the raw data is identical, so all reported results use the committed `balanced_data/`.
 </details>
 
 ## Step 2: Train and Evaluate Clean Model
@@ -109,7 +156,7 @@ In the PNGs, the sample car photo (`openimages_0000`, true class non_receipt) fl
 
 ## Step 4: Data Poisoning
 
-Reproduces **VUL-002**. The script defaults to a **10%** flip rate, the maximum allowed.
+Reproduces **VUL-002**. The script defaults to **targeted** selection (`--selection confident`) at a **10%** flip rate, the maximum allowed. It scores every training image with the provided clean checkpoint, `checkpoints/receipt_cnn_clean.pt` (`--model-path`), and flips the 57 images per class the model is most confident about.
 
 ```bash
 # (in starter/attacks)
@@ -131,15 +178,22 @@ for f in poisoned_data/train/*/flipped_*; do
 done; echo "checked=$n mismatched=$bad"
 diff -rq balanced_data/test poisoned_data/test && echo "test split identical"
 
-# 4d. (Optional) 5% comparison run
-python ../attacks/02_label_flip_poisoning.py --flip-rate 0.05 --target poisoned_data_5
+# 4d. (Optional) Comparison runs: same pipeline, different selection
+#     boundary = least-confident images; random = uniform random sample (seed 42)
+for sel in boundary random; do
+  python ../attacks/02_label_flip_poisoning.py --selection $sel --target poisoned_data_$sel
+  python train.py --data-dir poisoned_data_$sel --checkpoint-name receipt_cnn_poisoned_$sel.pt
+  python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_$sel.pt --test-dir balanced_data/test \
+      --results-dir ../attacks/results/02_label_flip/poisoned_$sel
+done
+
+# 4e. (Optional) Further random variants: 5% rate, and one-way (whole budget on one class)
+python ../attacks/02_label_flip_poisoning.py --selection random --flip-rate 0.05 --target poisoned_data_5
 python train.py --data-dir poisoned_data_5 --checkpoint-name receipt_cnn_poisoned_5.pt
 python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_5.pt --test-dir balanced_data/test \
     --results-dir ../attacks/results/02_label_flip/poisoned_5
-
-# 4e. (Optional) One-way variants: same ~10% budget spent on one class
 for cls in receipt non_receipt; do
-  python ../attacks/02_label_flip_poisoning.py --source-class $cls --target poisoned_oneway_$cls
+  python ../attacks/02_label_flip_poisoning.py --selection random --source-class $cls --target poisoned_oneway_$cls
   python train.py --data-dir poisoned_oneway_$cls --checkpoint-name receipt_cnn_poisoned_oneway_$cls.pt
   python evaluate.py --model-path checkpoints/receipt_cnn_poisoned_oneway_$cls.pt --test-dir balanced_data/test \
       --results-dir ../attacks/results/02_label_flip/poisoned_oneway_$cls
@@ -150,25 +204,28 @@ done
 
 - 4a:
   ```
+    receipt: selected 57 by 'confident' (true-class confidence 0.999-1.000)
+    non_receipt: selected 57 by 'confident' (true-class confidence 1.000-1.000)
   Flipped 57 receipt -> non_receipt
   Flipped 57 non_receipt -> receipt
   Total training images: 1154
   Labels flipped:        114
   Actual flip rate:      0.0988
   ```
-  Also prints `Label flip visualization saved to: .../results/02_label_flip/label_flip_results_5.png`.
-- 4b: Accuracy **0.9154**, Precision 0.9939, Recall **0.8359**, F1 **0.9081**, confusion matrix `[[194, 1], [32, 163]]`. Compared with the control: −3.33 pp accuracy, −7.69 pp recall, receipts rejected 17 → 32. Training loss stays around 0.28 instead of about 0.08.
+  Also prints `Label flip visualization saved to: .../results/02_label_flip/label_flip_results_5.png`. 56 of the flipped receipts are `X5100…` scans, and the flipped non-receipts are mostly fruit, vegetable and foliage photos.
+- 4b: `train.py` ends at `Epoch 15/15, Loss: ~0.40` (control: about 0.08). Evaluation: Accuracy **0.8795**, Precision **0.8394**, Recall 0.9385, F1 **0.8862**, confusion matrix `[[160, 35], [12, 183]]`. Compared with the control: **−6.92 pp accuracy** (−6.41 pp against the provided checkpoint), −14.40 pp precision, −6.06 pp F1. Non-receipts accepted as receipts rise from 3 to 35.
 - 4c: `checked=114 mismatched=0` and `test split identical`.
-- 4d: 56 labels flipped (0.0485). Accuracy 0.9641, Recall 0.9538, F1 0.9637 (no degradation compared with the control).
-- 4e: `Flipped 115 receipt -> non_receipt` gives accuracy 0.9308 and confusion matrix `[[172, 23], [4, 191]]`. `Flipped 115 non_receipt -> receipt` gives accuracy 0.9436 and confusion matrix `[[194, 1], [21, 174]]`. Neither degrades the model as much as the symmetric default.
+- 4d: boundary gives accuracy 0.8897 and confusion matrix `[[188, 7], [36, 159]]` (−5.90 pp). Random gives accuracy 0.9154 and confusion matrix `[[194, 1], [32, 163]]` (−3.33 pp).
+- 4e: random 5% flips 56 labels (0.0485) and gives accuracy 0.9641 (no degradation). One-way `receipt` gives 0.9308, confusion matrix `[[172, 23], [4, 191]]`. One-way `non_receipt` gives 0.9436, confusion matrix `[[194, 1], [21, 174]]`.
 
 ## Step 5: RAG Chatbot Setup
 
-Requires the `.env` from Environment Setup. A prebuilt index is provided in `faiss_index/`. Rebuilding it is optional and calls the embeddings API.
+Requires the `.env` from Environment Setup. The vector index (`faiss_index/`) is a generated artifact and is **not** committed, so build it first. This makes one embeddings API call covering the 4 policy documents.
 
 ```bash
 cd ../rag_chatbot      # starter/rag_chatbot
-python build_index.py  # optional: re-embeds the 4 policy docs (500-char chunks, 50 overlap)
+python build_index.py  # REQUIRED: embeds data/policies/*.md (500-char chunks, 50 overlap) -> faiss_index/
+ls faiss_index/        # policy.index  chunks.pkl
 python app.py &        # serves on http://localhost:5001  (leave running for Steps 6–7)
 
 # Health and smoke test
@@ -178,6 +235,7 @@ curl -s -X POST http://localhost:5001/chat -H "Content-Type: application/json" \
 ```
 
 **Expected:**
+- `build_index.py` completes without errors, and `faiss_index/` contains `policy.index` and `chunks.pkl`.
 - The health check returns `{"status":"ok"}`.
 - The smoke test answer should state the limit from `expense_policy.md` (**$75 per person per meal**), with that file among the `sources`. This is not scored; it only confirms the pipeline works.
 - Confirm the vulnerable precondition: all four policy files, including `executive_bonus_structure_CONFIDENTIAL.md`, are in `data/policies/` and indexed together.
@@ -301,8 +359,10 @@ Advisory counts change as vulnerability databases update; these figures are as o
 | 1. FGSM Evasion (VUL-001) | Adversarial accuracy at ε = 0.03 / 0.05 / 0.10 | 0.5103 / 0.3000 / **0.2718** |
 | 1. FGSM Evasion | Attack success rate at ε = 0.10 (peak) | **0.7120** |
 | 2. Label-Flip Poisoning (VUL-002) | Labels flipped (10%) | 114 / 1,154 (0.0988), 0 pixel changes |
-| 2. Label-Flip Poisoning | Accuracy / Recall / F1 change compared with control | **−3.33 / −7.69 / −3.87 pp** (receipts rejected 17 → 32) |
-| 2. Label-Flip Poisoning (5%) | Accuracy change compared with control | +1.54 pp (no degradation) |
+| 2. Label-Flip Poisoning (targeted, default) | Accuracy / Precision / F1 change compared with control | **−6.92 / −14.40 / −6.06 pp** (non-receipts accepted 3 → 35) |
+| 2. Label-Flip Poisoning (random, same budget) | Accuracy change compared with control | −3.33 pp |
+| 2. Label-Flip Poisoning (targeted boundary) | Accuracy change compared with control | −5.90 pp |
+| 2. Label-Flip Poisoning (random 5%) | Accuracy change compared with control | +1.54 pp (no degradation) |
 | 3. Prompt Injection (VUL-003) | Successful injections | **0 / 5** (system prompt retrieval: none) |
 | 3. Prompt Injection | Confidential source disclosed | **2 / 5** |
 | 4. Data Exfiltration (VUL-004) | Queries exfiltrating confidential data | **6 / 6** (confidential source in all 6) |
@@ -314,5 +374,8 @@ Advisory counts change as vulnerability databases update; these figures are as o
 
 - **Training is seeded** (`SEED = 42` in `train.py`; `seed=42` for poisoning), so CPU runs should reproduce the figures above. Each model was trained once in this assessment, so run-to-run repeatability was not independently confirmed; regenerating the 10% poisoned dataset did reproduce the identical training set. On CUDA or MPS, results may differ by about ±1–2 pp because of non-deterministic kernels. The provided checkpoint was trained on MPS and already differs from the CPU control. Always compare a poisoned model against a control trained on the **same hardware**.
 - **Chatbot results depend on the LLM** (`gpt-4o-mini`, temperature 0.3, served by the configured provider). Answer wording varies between runs, and a provider-side model update could change refusal behaviour. Retrieval (which documents appear in `sources`) depends only on the embeddings and the index, so it should be stable.
-- **Generated artifacts are git-ignored** (`*.json`, `*.pt`, `*.jpg`, `poisoned_data/`) except `06_trivy_report.json` and the clean checkpoint. Re-run the steps above to regenerate them.
+- **What the repository contains:**
+  - **Committed:** the clean dataset (`balanced_data/`, with `balanced_data_SHA256SUMS.txt`), the provided clean checkpoint, `06_trivy_report.json`, `starter/.env.example`, and every result file in `starter/attacks/results/` (JSON and PNG).
+  - **Generated, git-ignored:** retrained checkpoints (`*.pt`), poisoned dataset copies (`poisoned_data*/`), the FAISS index (`faiss_index/`) and `rag_chatbot/.env`. The steps above regenerate them.
+- **The targeted result clears the 5 pp target by about 1.9 pp against the control** (about 1.4 pp against the provided checkpoint), from a single training seed. On GPU or MPS hardware, retrain the control on the same device before comparing.
 - **Rules of engagement:** run only in an isolated environment, against the local chatbot on `localhost`. Do not commit `starter/rag_chatbot/.env`.

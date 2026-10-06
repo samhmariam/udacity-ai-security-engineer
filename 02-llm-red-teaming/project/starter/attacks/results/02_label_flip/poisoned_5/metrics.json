@@ -1,0 +1,21 @@
+{
+  "label": "checkpoints/receipt_cnn_poisoned.pt",
+  "accuracy": 0.9641025641025641,
+  "precision": 0.9738219895287958,
+  "recall": 0.9538461538461539,
+  "f1": 0.9637305699481865,
+  "confusion_matrix": [
+    [
+      190,
+      5
+    ],
+    [
+      9,
+      186
+    ]
+  ],
+  "classes": [
+    "non_receipt",
+    "receipt"
+  ]
+}

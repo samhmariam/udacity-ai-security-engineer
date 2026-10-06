@@ -2,8 +2,9 @@ venv/
 __pycache__/
 *.pyc
 *.jpg
+# The balanced dataset ships with the submission so every result is reproducible
+!starter/classifier/balanced_data/**/*.jpg
 .env
-.env.example
 *.pt
 !starter/classifier/checkpoints/receipt_cnn_clean.pt
 faiss_index/
@@ -13,3 +14,5 @@ _cifar_cache/
 _dataset_cache/
 *.json
 !starter/06_trivy_report.json
+# Attack outputs are submission evidence
+!starter/attacks/results/**/*.json
