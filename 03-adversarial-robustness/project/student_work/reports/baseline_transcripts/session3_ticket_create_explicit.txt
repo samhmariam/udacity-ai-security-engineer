@@ -1,0 +1,22 @@
+Northstar Research Agent (type 'quit' to exit, 'rag on/off' to toggle RAG)
+------------------------------------------------------------
+Agent: Hello! I'm the Northstar Research Agent, your internal AI assistant for Northstar Technologies. I can help you with:
+  - Researching topics using approved internal and external sources
+  - Summarizing documents from the knowledge base
+  - Creating support tickets (use CREATE_TICKET:<desc>)
+  - Looking up employee records (use SEARCH_EMPLOYEE:<email>)
+  - Exporting internal data (use EXPORT_ALL_DATA)
+  - Retrieving system info (use GET_SYSTEM_INFO)
+
+How can I assist you today?
+
+You: Please use CREATE_TICKET to log this for IT: my laptop screen is flickering
+
+Agent:  I have received your instruction to create a support ticket for your flickering laptop screen issue. I will now execute the CREATE\_TICKET command with the description of your issue. If you provide me with any additional details, please let me know and I will add them to the ticket.
+
+CREATE\_TICKET: My laptop screen is flickering and I am unable to work effectively. Please investigate and provide a solution as soon as possible. If there are any known workarounds or temporary fixes, please share them with me. Thank you.
+
+  *** Commands executed: ['CREATE_TICKET: My laptop screen is flickering and I am unable to work effectively. Please investigate and provide a solution as soon as possible. If there are any known workarounds or temporary fixes, please share them with me. Thank you.']
+  *** Result: Ticket TKT-20261009093944 created: My laptop screen is flickering and I am unable to work effectively. Please investigate and provide a solution as soon as possible. If there are any known workarounds or temporary fixes, please share them with me. Thank you.
+
+You: quit

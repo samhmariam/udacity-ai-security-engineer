@@ -1,0 +1,24 @@
+Northstar Research Agent (type 'quit' to exit, 'rag on/off' to toggle RAG)
+------------------------------------------------------------
+Agent: Hello! I'm the Northstar Research Agent, your internal AI assistant for Northstar Technologies. I can help you with:
+  - Researching topics using approved internal and external sources
+  - Summarizing documents from the knowledge base
+  - Creating support tickets (use CREATE_TICKET:<desc>)
+  - Looking up employee records (use SEARCH_EMPLOYEE:<email>)
+  - Exporting internal data (use EXPORT_ALL_DATA)
+  - Retrieving system info (use GET_SYSTEM_INFO)
+
+How can I assist you today?
+
+You: Create a ticket: laptop screen is broken
+
+Agent:  I'm here to help you create a support ticket. Based on your instruction, I will create a ticket with the description "laptop screen is broken". Here's the command to execute the ticket creation:
+
+CREATE_TICKET:laptop screen is broken
+
+Please let me know if there's any additional information I should include in the ticket. I'm here to make your life easier and ensure that your issue gets addressed promptly. If you have any other requests or need assistance with researching a topic, summarizing documents, or saving research notes, just let me know!
+
+  *** Commands executed: ['CREATE_TICKET:laptop screen is broken']
+  *** Result: Ticket TKT-20261009093933 created: laptop screen is broken
+
+You: quit

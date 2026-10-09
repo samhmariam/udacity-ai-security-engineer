@@ -17,3 +17,9 @@ htmlcov/
 
 # PB-01 dry-run evidence exports contain retrieved PII
 **/dryrun-case/
+
+# ChromaDB vector store, rebuilt by load_knowledge_base.py
+**/chroma_data/
+
+# Northstar agent runtime output (save_note tool writes timestamped notes)
+03-adversarial-robustness/project/student_work/reports/note_*.md
