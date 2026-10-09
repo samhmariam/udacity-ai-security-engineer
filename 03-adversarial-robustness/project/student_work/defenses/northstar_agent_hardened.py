@@ -612,12 +612,20 @@ AGENT_PROMPT = build_agent_prompt("research")
 
 def parse_tool_calls(text: str) -> list[dict]:
     """Parse structured tool calls from LLM response."""
+    # Tolerate whitespace after TOOL:, single or double quotes, and markdown
+    # escaping. This makes LEGITIMATE tool calls parse reliably; security does
+    # not depend on this parser being strict — execute_tool enforces the task's
+    # tool allowlist regardless of what parses.
+    text = text.replace("\\_", "_")
     tool_calls = []
+    q = r'["\']'  # a single or double quote
     patterns = [
-        (r'TOOL:fetch_url\("([^"]+)"\)', "fetch_url"),
-        (r'TOOL:query_hr_database\(\)', "query_hr_database"),
-        (r'TOOL:create_ticket\("([^"]+)",\s*"([^"]+)",\s*"([^"]+)"\)', "create_ticket"),
-        (r'TOOL:save_note\("([^"]+)",\s*"([^"]*?)"\)', "save_note"),
+        (rf'TOOL:\s*fetch_url\(\s*{q}([^"\']+){q}\s*\)', "fetch_url"),
+        (r'TOOL:\s*query_hr_database\(\s*\)', "query_hr_database"),
+        (rf'TOOL:\s*create_ticket\(\s*{q}([^"\']+){q}\s*,\s*{q}([^"\']+){q}\s*,'
+         rf'\s*{q}([^"\']+){q}\s*\)', "create_ticket"),
+        (rf'TOOL:\s*save_note\(\s*{q}([^"\']+){q}\s*,\s*{q}([^"\']*?){q}\s*\)',
+         "save_note"),
     ]
     for pattern, tool_name in patterns:
         for match in re.finditer(pattern, text, re.DOTALL):

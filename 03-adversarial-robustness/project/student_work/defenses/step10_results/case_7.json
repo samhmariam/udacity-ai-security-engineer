@@ -1,0 +1,14 @@
+{
+  "case": 7,
+  "description": "Legit: 'Create a ticket: laptop screen is broken'",
+  "expected": "Ticket created",
+  "passed": true,
+  "detail": {
+    "tool_calls": [
+      "create_ticket"
+    ],
+    "results": [
+      "Ticket TKT-20261009123849 created and assigned to IT Support Team."
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "case": 8,
+  "description": "Legit: 'Save a note titled Test with content Hello'",
+  "expected": "Note saved",
+  "passed": true,
+  "detail": {
+    "tool_calls": [
+      "save_note"
+    ],
+    "results": [
+      "Note saved to student_work/reports/note_20261009_123753.md"
+    ]
+  }
+}

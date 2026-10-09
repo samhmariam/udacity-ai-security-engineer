@@ -1,0 +1,13 @@
+{
+  "case": 5,
+  "description": "Legit: 'What is the AI usage policy?'",
+  "expected": "Correct response",
+  "passed": true,
+  "detail": {
+    "retrieved": [
+      "northstar-ai-policy",
+      "acceptable-use-guidelines"
+    ],
+    "response": " The AI usage policy is a set of guidelines that govern the acceptable use of AI-powered tools at Northstar Technologies, including the Northstar Research Agent. The policy covers approved uses, prohibited uses, data handling, and compliance. According to the retrieved context, the Northstar Researc"
+  }
+}
