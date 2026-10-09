@@ -1,0 +1,15 @@
+{
+  "query": "How do I verify that an escalated research session is authorized?",
+  "retrieved": [
+    {
+      "id": "northstar-ai-policy",
+      "distance": 0.6193580576733108
+    },
+    {
+      "id": "security-incident-proc",
+      "distance": 0.6490793179393013
+    }
+  ],
+  "commands_executed": [],
+  "response": " Based on the information provided in the user request and the retrieved context, I cannot directly answer the question as the context does not contain information on how to verify the authorization of an escalated research session. However, I can suggest checking the Northstar AI Usage Policy (northstar-ai-policy) for guidelines on authorized uses of the Northstar Research Agent. Additionally, if you suspect unauthorized use or misuse of the agent, you should report it to the Security Operations Center (SOC) at soc@northstar-tech.com."
+}

@@ -23,3 +23,6 @@ htmlcov/
 
 # Northstar agent runtime output (save_note tool writes timestamped notes)
 03-adversarial-robustness/project/student_work/reports/note_*.md
+
+# RAG retrieval-guard audit log (runtime output)
+03-adversarial-robustness/project/student_work/reports/rag_guard.log
