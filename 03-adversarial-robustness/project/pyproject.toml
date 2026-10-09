@@ -1,0 +1,10 @@
+[project]
+name = "project"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=0.5.0,<1.0.0",
+    "pillow>=10.0.0",
+    "requests>=2.31.0",
+    "sentence-transformers>=2.2.0",
+]
