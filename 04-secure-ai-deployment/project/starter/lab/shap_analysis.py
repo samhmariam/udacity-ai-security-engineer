@@ -1,0 +1,155 @@
+"""
+shap_analysis.py — SHAP setup and proxy-feature detection.
+
+The conceptual jump in this lab is the proxy-feature detector. Anyone can
+call a SHAP plotting helper. Encoding what a proxy feature *looks like* in
+code is the hard part — and is exactly the skill an AI Risk Officer is
+hired for.
+
+Run the unit tests to check your work:
+    cd starter/
+    pytest lab/tests/test_shap_analysis.py -v
+"""
+from __future__ import annotations
+from typing import List, Sequence
+import numpy as np
+import pandas as pd
+import shap
+
+
+def setup_explainer(pipeline, X_background: pd.DataFrame):
+    """
+    TODO: Initialize a SHAP explainer for the trained scikit-learn pipeline.
+
+    What the pipeline contains. The trained model that ships with the
+    project is a scikit-learn pipeline with two named steps: a
+    preprocessing step (which standard-scales the numeric columns and
+    one-hot-encodes the categorical columns), and a tree-based classifier
+    step.
+
+    Why a tree-aware explainer. Tree-aware SHAP explainers are the right
+    choice for tree-based models — they are exact, fast, and tree-aware.
+    Model-agnostic SHAP explainers exist but are slow; you would only use
+    them when the model is not tree-based.
+
+    What you need to do.
+        1. Pull the preprocessing step and the classifier step out of the
+           pipeline by their named-steps lookup.
+        2. Push the background sample through the preprocessing step. SHAP
+           needs the post-preprocessing feature matrix that the classifier
+           actually sees, not the raw input.
+        3. Get the post-preprocessing feature names from the preprocessing
+           step. These will look different from the raw column names —
+           one-hot encoding turns one categorical column into many
+           one-hot columns.
+        4. Initialize a tree-aware SHAP explainer on the classifier step
+           using the tree-path-dependent perturbation method (which does
+           not require a background sample to be passed at construction
+           time and is more robust for high-dimensional categorical inputs
+           after one-hot encoding).
+
+    Returns:
+        Three values: the explainer, the background sample after
+        preprocessing, and the list of post-preprocessing feature names.
+
+    Note. The background sample returned here is NOT the test set. To
+    compute SHAP values for the test set, push the test set through the
+    same preprocessing step yourself in the notebook.
+    """
+    raise NotImplementedError("Implement setup_explainer")
+
+
+def detect_proxy_features(
+    shap_values: np.ndarray,
+    feature_names: Sequence[str],
+    protected_feature_substrings: Sequence[str],
+    top_k: int = 8,
+) -> pd.DataFrame:
+    """
+    TODO: Identify candidate proxy features and return a ranked table.
+
+    What is a proxy feature? A non-protected feature that:
+        (1) the model relies on heavily — it has a large average absolute
+            SHAP magnitude across the dataset;
+        (2) pushes predictions in a particular direction — its average
+            signed SHAP is non-trivially positive or negative, not just
+            noise that averages to zero;
+        (3) is NOT itself a protected attribute.
+
+    For HealthGuard, the planted proxy is insurance type. A real audit will
+    not tell you what the proxy is — your function must SURFACE candidates
+    so the human auditor can investigate.
+
+    Algorithm to implement.
+        - For each feature, compute three numbers:
+            * its average absolute SHAP magnitude (raw importance);
+            * its average signed SHAP (which direction it pushes
+              predictions, on average);
+            * a signed-strength score, which is the ratio of the magnitude
+              of the average signed SHAP to the average absolute SHAP.
+              When this score is high, the feature has a consistent
+              directional effect; when low, the feature's effect is
+              bidirectional and washes out on average.
+        - Drop any feature whose name contains any of the substrings in
+          protected_feature_substrings (case-insensitive). After one-hot
+          encoding, a single protected attribute appears as many columns,
+          one per category. Substring matching is the cleanest way to
+          exclude all of them at once.
+        - From the remaining features, return the top_k by raw importance,
+          along with their signed-strength scores so the auditor can see
+          which ones have a directional effect.
+
+    Why filter by name. After one-hot encoding you get column names that
+    embed the original column name as a substring. Substring matching
+    against the original column name removes every category of the
+    protected attribute in one step.
+
+    Returns:
+        A table with one row per surfaced candidate, sorted by raw
+        importance descending, with columns for the feature name, its raw
+        importance, its average signed effect, its signed-strength score,
+        and its rank.
+    """
+    raise NotImplementedError("Implement detect_proxy_features")
+
+
+def explain_false_negatives(
+    explainer,
+    X_transformed: np.ndarray,
+    feature_names: Sequence[str],
+    y_true,
+    y_pred,
+    mask,
+    n_examples: int = 3,
+) -> List[dict]:
+    """
+    TODO: For up to n_examples false negatives matching the mask, return
+    their top contributing features (positive AND negative) with SHAP values.
+
+    Why this matters. A global SHAP summary tells you the population-level
+    pattern. A local explanation tells you the per-patient story. For the
+    most-harmed subgroup, the local story is what proves the proxy
+    pathway: the clinical features push the prediction up, but the proxy
+    features push it down hard enough to flip the prediction below the
+    threshold. That is not something the global plot can show you on its
+    own.
+
+    What you need to do.
+        - Identify the rows that are false negatives (true label is one,
+          predicted label is zero) AND that lie within the supplied mask
+          (the most-harmed-subgroup mask, in the typical use case).
+        - Take up to n_examples of them.
+        - For each of those rows, compute the per-feature SHAP values and
+          rank the features both by most-positive contribution and by
+          most-negative contribution. Take the top few of each.
+
+    Returns:
+        A list with one entry per selected false negative. Each entry is
+        a dictionary that names the row index, carries the per-feature
+        SHAP values, lists the top positive contributors with their SHAP
+        values, lists the top negative contributors with their SHAP
+        values, and reports the sum of the positive and negative
+        contributions separately so the auditor can see how the
+        contributions netted out.
+    """
+    raise NotImplementedError("Implement explain_false_negatives")

@@ -32,4 +32,4 @@ build-backend = "uv_build"
 
 [tool.uv.workspace]
 members = []
-exclude = ["03-adversarial-robustness/project"]
+exclude = ["03-adversarial-robustness/project", "04-secure-ai-deployment/project"]
