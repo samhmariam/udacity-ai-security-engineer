@@ -17,9 +17,25 @@ import pandas as pd
 import shap
 
 
+def _positive_class(shap_values) -> np.ndarray:
+    """Normalise SHAP output to a 2-D (rows x features) positive-class array.
+
+    Binary sklearn GBMs give a 2-D log-odds array, but other models/versions
+    return a per-class list or a 3-D (rows x features x classes) array.
+    """
+    if isinstance(shap_values, list):
+        shap_values = shap_values[-1]
+    values = np.asarray(shap_values, dtype=float)
+    if values.ndim == 3:
+        values = values[..., -1]
+    if values.ndim == 1:
+        values = values.reshape(1, -1)
+    return values
+
+
 def setup_explainer(pipeline, X_background: pd.DataFrame):
     """
-    TODO: Initialize a SHAP explainer for the trained scikit-learn pipeline.
+    Initialize a SHAP explainer for the trained scikit-learn pipeline.
 
     What the pipeline contains. The trained model that ships with the
     project is a scikit-learn pipeline with two named steps: a
@@ -56,7 +72,12 @@ def setup_explainer(pipeline, X_background: pd.DataFrame):
     compute SHAP values for the test set, push the test set through the
     same preprocessing step yourself in the notebook.
     """
-    raise NotImplementedError("Implement setup_explainer")
+    preprocessor = pipeline.named_steps["preprocessor"]
+    classifier = pipeline.named_steps["classifier"]
+    X_background_t = preprocessor.transform(X_background)
+    feature_names = list(preprocessor.get_feature_names_out())
+    explainer = shap.TreeExplainer(classifier, feature_perturbation="tree_path_dependent")
+    return explainer, X_background_t, feature_names
 
 
 def detect_proxy_features(
@@ -66,7 +87,7 @@ def detect_proxy_features(
     top_k: int = 8,
 ) -> pd.DataFrame:
     """
-    TODO: Identify candidate proxy features and return a ranked table.
+    Identify candidate proxy features and return a ranked table.
 
     What is a proxy feature? A non-protected feature that:
         (1) the model relies on heavily — it has a large average absolute
@@ -110,7 +131,31 @@ def detect_proxy_features(
         importance, its average signed effect, its signed-strength score,
         and its rank.
     """
-    raise NotImplementedError("Implement detect_proxy_features")
+    values = _positive_class(shap_values)
+    names = list(feature_names)
+    if values.shape[1] != len(names):
+        raise ValueError(f"{values.shape[1]} SHAP columns but {len(names)} feature names")
+
+    mean_abs = np.abs(values).mean(axis=0)
+    mean_signed = values.mean(axis=0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        strength = np.where(mean_abs > 0, np.abs(mean_signed) / mean_abs, 0.0)
+
+    table = pd.DataFrame({
+        "feature": names,
+        "mean_abs_shap": mean_abs,
+        "mean_shap": mean_signed,
+        "signed_strength": np.clip(strength, 0.0, 1.0),
+    })
+    protected = [p.lower() for p in protected_feature_substrings]
+    keep = [not any(p in name.lower() for p in protected) for name in names]
+    table = (table[keep]
+             .sort_values("mean_abs_shap", ascending=False, kind="stable")
+             .head(top_k)
+             .reset_index(drop=True))
+    table["direction"] = np.where(table["mean_shap"] < 0, "lowers risk", "raises risk")
+    table["rank"] = np.arange(1, len(table) + 1)
+    return table
 
 
 def explain_false_negatives(
@@ -121,9 +166,10 @@ def explain_false_negatives(
     y_pred,
     mask,
     n_examples: int = 3,
+    top_n: int = 5,
 ) -> List[dict]:
     """
-    TODO: For up to n_examples false negatives matching the mask, return
+    For up to n_examples false negatives matching the mask, return
     their top contributing features (positive AND negative) with SHAP values.
 
     Why this matters. A global SHAP summary tells you the population-level
@@ -152,4 +198,34 @@ def explain_false_negatives(
         contributions separately so the auditor can see how the
         contributions netted out.
     """
-    raise NotImplementedError("Implement explain_false_negatives")
+    y_true = np.asarray(y_true).astype(int).ravel()
+    y_pred = np.asarray(y_pred).astype(int).ravel()
+    mask = np.asarray(mask, dtype=bool).ravel()
+    names = list(feature_names)
+
+    rows = np.flatnonzero((y_true == 1) & (y_pred == 0) & mask)[:n_examples]
+    if rows.size == 0:
+        return []
+
+    X_rows = X_transformed.iloc[rows] if hasattr(X_transformed, "iloc") else X_transformed[rows]
+    values = _positive_class(explainer.shap_values(X_rows))
+    base_value = float(np.ravel(explainer.expected_value)[-1])
+
+    examples = []
+    for row_idx, row_values in zip(rows, values):
+        contrib = pd.Series(row_values, index=names)
+        positive = contrib[contrib > 0].sort_values(ascending=False).head(top_n)
+        negative = contrib[contrib < 0].sort_values().head(top_n)
+        sum_positive = float(contrib[contrib > 0].sum())
+        sum_negative = float(contrib[contrib < 0].sum())
+        examples.append({
+            "instance_index": int(row_idx),
+            "shap_values": contrib.to_dict(),
+            "top_positive_features": [(f, float(v)) for f, v in positive.items()],
+            "top_negative_features": [(f, float(v)) for f, v in negative.items()],
+            "sum_positive": sum_positive,
+            "sum_negative": sum_negative,
+            "base_value_log_odds": base_value,
+            "output_log_odds": base_value + sum_positive + sum_negative,
+        })
+    return examples

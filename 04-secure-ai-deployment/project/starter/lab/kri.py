@@ -20,6 +20,14 @@ import pandas as pd
 
 from .audit import compute_subgroup_metrics
 
+# Threshold comparisons round first so float noise (e.g. 15.000000000001 pp)
+# cannot push a value across a band boundary.
+_PRECISION = 9
+
+
+def _cell_label(label) -> str:
+    return " × ".join(map(str, label)) if isinstance(label, tuple) else str(label)
+
 
 def kri_subgroup_fnr_drift(
     y_true,
@@ -28,7 +36,7 @@ def kri_subgroup_fnr_drift(
     min_n_positives: int = 20,
 ) -> dict:
     """
-    TODO: Implement the KRI defined as KRI-1 in your D7 dashboard tab.
+    Implement the KRI defined as KRI-1 in your D7 dashboard tab.
 
     Conceptual definition (from D7).
         Look across the intersectional cells of the audit population — for
@@ -62,7 +70,48 @@ def kri_subgroup_fnr_drift(
         rate, the cell label with the best false-negative rate, the count
         of qualifying cells, and a short note string.
     """
-    raise NotImplementedError("Implement kri_subgroup_fnr_drift")
+    cells = compute_subgroup_metrics(y_true, y_pred, sensitive_features)
+    qualifying = cells[(cells["n_positives"] >= min_n_positives) & cells["FNR"].notna()]
+    result = {
+        "kri_id": "KRI-1",
+        "kri_name": "Subgroup FNR Drift",
+        "status": "Insufficient",
+        "gap_pp": None,
+        "worst_cell": None,
+        "worst_fnr": None,
+        "best_cell": None,
+        "best_fnr": None,
+        "n_qualifying_cells": int(len(qualifying)),
+        "n_total_cells": int(len(cells)),
+        "min_n_positives": min_n_positives,
+    }
+    if len(qualifying) < 2:
+        result["note"] = (f"Only {len(qualifying)} of {len(cells)} cells have >= "
+                          f"{min_n_positives} positives; need 2 to measure a gap.")
+        return result
+
+    worst, best = qualifying["FNR"].idxmax(), qualifying["FNR"].idxmin()
+    worst_fnr, best_fnr = float(qualifying.loc[worst, "FNR"]), float(qualifying.loc[best, "FNR"])
+    gap_pp = round((worst_fnr - best_fnr) * 100, _PRECISION)
+    if gap_pp <= 8:
+        status = "Green"
+    elif gap_pp <= 15:
+        status = "Amber"
+    else:
+        status = "Red"
+
+    result.update({
+        "status": status,
+        "gap_pp": round(gap_pp, 1),
+        "worst_cell": _cell_label(worst),
+        "worst_fnr": round(worst_fnr, 3),
+        "best_cell": _cell_label(best),
+        "best_fnr": round(best_fnr, 3),
+        "note": (f"FNR gap {gap_pp:.1f} pp: worst {_cell_label(worst)} {worst_fnr:.1%} vs best "
+                 f"{_cell_label(best)} {best_fnr:.1%} across {len(qualifying)} cells with >= "
+                 f"{min_n_positives} positives (Green <= 8, Amber <= 15, Red > 15)."),
+    })
+    return result
 
 
 def kri_override_health(
@@ -70,7 +119,7 @@ def kri_override_health(
     structured_share: float,
 ) -> dict:
     """
-    TODO: Implement the KRI defined as KRI-2 in your D7 dashboard tab.
+    Implement the KRI defined as KRI-2 in your D7 dashboard tab.
 
     Conceptual definition. This is a dual-criterion KRI. Two inputs:
         - the share of inferences where a clinician recorded an override,
@@ -100,7 +149,38 @@ def kri_override_health(
         condition triggered the status (so the dashboard can show why the
         KRI changed color).
     """
-    raise NotImplementedError("Implement kri_override_health")
+    for name, value in (("override_rate", override_rate), ("structured_share", structured_share)):
+        if not 0 <= value <= 1:
+            raise ValueError(f"{name} must be a fraction in [0, 1], got {value}")
+    rate = round(float(override_rate), _PRECISION)
+    share = round(float(structured_share), _PRECISION)
+
+    # Red takes precedence over Amber: one breached criterion is enough.
+    red = [msg for cond, msg in (
+        (rate > 0.15, f"override rate {rate:.1%} > 15%"),
+        (share < 0.60, f"structured share {share:.1%} < 60%"),
+    ) if cond]
+    amber = [msg for cond, msg in (
+        (0.10 < rate <= 0.15, f"override rate {rate:.1%} in (10%, 15%]"),
+        (0.60 <= share < 0.80, f"structured share {share:.1%} in [60%, 80%)"),
+    ) if cond]
+
+    if red:
+        status, reason = "Red", "; ".join(red)
+    elif amber:
+        status, reason = "Amber", "; ".join(amber)
+    else:
+        status = "Green"
+        reason = f"override rate {rate:.1%} <= 10% and structured share {share:.1%} >= 80%"
+
+    return {
+        "kri_id": "KRI-2",
+        "kri_name": "Override Channel Health",
+        "status": status,
+        "override_rate": float(override_rate),
+        "structured_share": float(structured_share),
+        "reason": reason,
+    }
 
 
 def kri_inference_anomaly(
@@ -108,7 +188,7 @@ def kri_inference_anomaly(
     total_inferences: int,
 ) -> dict:
     """
-    TODO: Implement the KRI defined as KRI-3 in your D7 dashboard tab.
+    Implement the KRI defined as KRI-3 in your D7 dashboard tab.
 
     Conceptual definition. Convert the count of anomalous inferences into
     an anomaly rate per one thousand inferences, and apply a Green / Amber
@@ -126,4 +206,32 @@ def kri_inference_anomaly(
         per one thousand inferences, the raw counts echoed back, and a
         short note describing the rate in plain language.
     """
-    raise NotImplementedError("Implement kri_inference_anomaly")
+    if anomaly_count < 0 or total_inferences < 0:
+        raise ValueError("counts must be non-negative")
+    result = {
+        "kri_id": "KRI-3",
+        "kri_name": "Inference Anomaly Rate",
+        "anomaly_count": int(anomaly_count),
+        "total_inferences": int(total_inferences),
+    }
+    if total_inferences == 0:
+        result.update(status="Insufficient", per_1000=None,
+                      note="No inferences in the window; anomaly rate is undefined.")
+        return result
+    if anomaly_count > total_inferences:
+        raise ValueError("anomaly_count cannot exceed total_inferences")
+
+    per_1000 = round(anomaly_count / total_inferences * 1000, _PRECISION)
+    if per_1000 < 1:
+        status = "Green"
+    elif per_1000 <= 5:
+        status = "Amber"
+    else:
+        status = "Red"
+    result.update(
+        status=status,
+        per_1000=per_1000,
+        note=(f"{anomaly_count} anomalous of {total_inferences:,} inferences = "
+              f"{per_1000:.2f} per 1,000 (Green < 1, Amber 1-5, Red > 5)."),
+    )
+    return result

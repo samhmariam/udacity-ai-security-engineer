@@ -25,7 +25,7 @@ def compute_subgroup_metrics(
     sensitive_features,
 ) -> pd.DataFrame:
     """
-    TODO: Compute per-subgroup metrics and return them as a table.
+    Compute per-subgroup metrics and return them as a table.
 
     What the input looks like. The sensitive_features argument can be either
     a single column of group labels (single-axis analysis — e.g., region by
@@ -51,7 +51,40 @@ def compute_subgroup_metrics(
         A table with one row per subgroup, indexed by the subgroup label
         (single-axis) or the combination of labels (intersectional).
     """
-    raise NotImplementedError("Implement compute_subgroup_metrics")
+    y_true = np.asarray(y_true).astype(int).ravel()
+    y_pred = np.asarray(y_pred).astype(int).ravel()
+
+    if isinstance(sensitive_features, pd.DataFrame):
+        groups = sensitive_features.reset_index(drop=True)
+    else:
+        s = pd.Series(np.asarray(sensitive_features).ravel(),
+                      name=getattr(sensitive_features, "name", None))
+        groups = s.to_frame(name=s.name if s.name is not None else "subgroup")
+    if len(groups) != len(y_true) or len(y_pred) != len(y_true):
+        raise ValueError("y_true, y_pred and sensitive_features must have the same length")
+
+    group_cols = list(groups.columns)
+    # A single column groups by scalar labels; several columns by tuples.
+    by = group_cols[0] if len(group_cols) == 1 else group_cols
+
+    labels, rows = [], []
+    for label, idx in groups.groupby(by, sort=True, dropna=False).indices.items():
+        t, p = y_true[idx], y_pred[idx]
+        labels.append(label)
+        rows.append({
+            "n_total": int(len(idx)),
+            "n_positives": int((t == 1).sum()),
+            "selection_rate": selection_rate(p),
+            "FNR": false_negative_rate(t, p),
+            "FPR": false_positive_rate(t, p),
+            "accuracy": float((t == p).mean()),
+        })
+
+    if len(group_cols) == 1:
+        index = pd.Index(labels, name=group_cols[0])
+    else:
+        index = pd.MultiIndex.from_tuples(labels, names=group_cols)
+    return pd.DataFrame(rows, index=index).sort_index()
 
 
 def find_most_harmed_subgroup(
@@ -61,7 +94,7 @@ def find_most_harmed_subgroup(
     higher_is_worse: bool = True,
 ) -> Optional[dict]:
     """
-    TODO: Return the subgroup row with the worst value of `metric_name`,
+    Return the subgroup row with the worst value of `metric_name`,
     AMONG subgroups that meet a minimum-positive-count threshold.
 
     Why this matters — the small-n trap. A cell with five positives can
@@ -90,7 +123,29 @@ def find_most_harmed_subgroup(
         and the total count. Return nothing (None) if no subgroup meets
         the minimum-positive-count threshold.
     """
-    raise NotImplementedError("Implement find_most_harmed_subgroup")
+    if metric_name not in subgroup_df.columns:
+        raise KeyError(f"metric {metric_name!r} not in subgroup table")
+
+    eligible = subgroup_df[
+        (subgroup_df["n_positives"] >= min_n_positives)
+        & subgroup_df[metric_name].notna()
+    ]
+    if eligible.empty:
+        return None
+
+    metric = eligible[metric_name]
+    label = metric.idxmax() if higher_is_worse else metric.idxmin()
+    row = eligible.loc[label]
+    return {
+        "subgroup": label,
+        "metric": metric_name,
+        "metric_value": float(row[metric_name]),
+        "n_positives": int(row["n_positives"]),
+        "n_total": int(row["n_total"]),
+        "min_n_positives": min_n_positives,
+        "n_eligible_subgroups": int(len(eligible)),
+        "n_excluded_subgroups": int(len(subgroup_df) - len(eligible)),
+    }
 
 
 def assess_proxy_pathway(
@@ -99,9 +154,11 @@ def assess_proxy_pathway(
     secondary_axis_low,
     secondary_axis_high,
     metric_name: str = "FNR",
+    min_margin_pp: float = 5.0,
+    min_n_positives: int = 20,
 ) -> dict:
     """
-    TODO: Compare the within-primary-axis disparity to the across-primary-
+    Compare the within-primary-axis disparity to the across-primary-
     axis baseline, and return a verdict on whether a proxy pathway is
     consistent with the data.
 
@@ -145,5 +202,96 @@ def assess_proxy_pathway(
         A dictionary with the within-axis gap (in percentage points), the
         reference gap (in percentage points), the verdict, the reference
         primary value used, and a short rationale string.
+
+    Implementation notes. The primary axis is index level 0 and the
+    secondary axis is level 1. "Meaningfully larger" means the within-axis
+    gap exceeds the reference gap by at least `min_margin_pp` percentage
+    points. Verdicts are "proxy_supported", "inconsistent_with_proxy", or
+    "inconclusive". The rationale flags any comparison cell below
+    `min_n_positives` positives, because its rate is unstable.
     """
-    raise NotImplementedError("Implement assess_proxy_pathway")
+    result = {
+        "metric": metric_name,
+        "primary_axis_value": primary_axis_value,
+        "secondary_axis_low": secondary_axis_low,
+        "secondary_axis_high": secondary_axis_high,
+        "within_gap_pp": float("nan"),
+        "reference_gap_pp": float("nan"),
+        "reference_primary_value": None,
+        "verdict": "inconclusive",
+        "rationale": "",
+    }
+
+    if not isinstance(intersectional_df.index, pd.MultiIndex) or intersectional_df.index.nlevels < 2:
+        result["rationale"] = ("Needs an intersectional table indexed by "
+                               "(primary axis, secondary axis).")
+        return result
+
+    def cell(primary):
+        """Metric value and positive count for (primary, low) and (primary, high)."""
+        out = []
+        for secondary in (secondary_axis_low, secondary_axis_high):
+            key = (primary, secondary)
+            if key not in intersectional_df.index:
+                return None
+            row = intersectional_df.loc[key]
+            value = float(row[metric_name])
+            if np.isnan(value):
+                return None
+            out.append((value, int(row.get("n_positives", 0)), int(row.get("n_total", 0))))
+        return out
+
+    target = cell(primary_axis_value)
+    if target is None:
+        result["rationale"] = (
+            f"Missing or undefined {metric_name} for {primary_axis_value} x "
+            f"{secondary_axis_low} or {primary_axis_value} x {secondary_axis_high}.")
+        return result
+    (low_v, low_npos, _), (high_v, high_npos, _) = target
+    within_gap = (low_v - high_v) * 100
+    result["within_gap_pp"] = within_gap
+    result["n_positives_low_cell"] = low_npos
+    result["n_positives_high_cell"] = high_npos
+
+    # Reference: the other primary value with the largest sample whose two
+    # comparison cells both exist, so the baseline gap is as stable as possible.
+    candidates = []
+    for primary in intersectional_df.index.get_level_values(0).unique():
+        if primary == primary_axis_value:
+            continue
+        ref = cell(primary)
+        if ref is not None:
+            candidates.append((ref[0][2] + ref[1][2], primary, ref))
+    if not candidates:
+        result["rationale"] = (f"No other {intersectional_df.index.names[0]} value has both "
+                               f"comparison cells; no reference baseline.")
+        return result
+    _, ref_primary, ((ref_low, _, _), (ref_high, _, _)) = max(candidates, key=lambda c: c[0])
+    reference_gap = (ref_low - ref_high) * 100
+    result["reference_gap_pp"] = reference_gap
+    result["reference_primary_value"] = ref_primary
+
+    small_n = min(low_npos, high_npos) < min_n_positives
+    power_note = (f" Caution: a comparison cell has fewer than {min_n_positives} positives."
+                  if small_n else "")
+    excess = within_gap - reference_gap
+
+    if within_gap <= 0:
+        result["rationale"] = (
+            f"Within-{primary_axis_value} gap is {within_gap:+.1f} pp: "
+            f"{secondary_axis_low} is not worse than {secondary_axis_high}, "
+            f"so there is no directional effect to attribute.{power_note}")
+    elif excess >= min_margin_pp:
+        result["verdict"] = "proxy_supported"
+        result["rationale"] = (
+            f"Within {primary_axis_value}, {secondary_axis_low} vs {secondary_axis_high} "
+            f"{metric_name} gap is {within_gap:+.1f} pp against {reference_gap:+.1f} pp in "
+            f"{ref_primary} ({excess:+.1f} pp excess, margin {min_margin_pp:.0f} pp): the "
+            f"secondary axis carries disparity inside {primary_axis_value}.{power_note}")
+    else:
+        result["verdict"] = "inconsistent_with_proxy"
+        result["rationale"] = (
+            f"Within-{primary_axis_value} gap {within_gap:+.1f} pp is comparable to the "
+            f"{ref_primary} reference {reference_gap:+.1f} pp (excess {excess:+.1f} pp < "
+            f"{min_margin_pp:.0f} pp margin).{power_note}")
+    return result

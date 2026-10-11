@@ -15,9 +15,34 @@ import numpy as np
 import pandas as pd
 
 
+def _labels(values) -> np.ndarray:
+    """Coerce a label sequence (list, Series, array) to a flat int array."""
+    return np.asarray(values).astype(int).ravel()
+
+
+def _rate_by_group(sensitive, rate_fn, *columns) -> dict:
+    """Apply `rate_fn` to the rows of each group; returns {group: rate}."""
+    groups = pd.Series(np.asarray(sensitive).ravel())
+    out = {}
+    for group, idx in groups.groupby(groups, sort=True).groups.items():
+        rows = np.asarray(idx)
+        out[group] = rate_fn(*(col[rows] for col in columns))
+    return out
+
+
+def _spread(rates: dict):
+    """(max - min, argmax group, argmin group), ignoring undefined (nan) rates."""
+    defined = {g: r for g, r in rates.items() if not np.isnan(r)}
+    if not defined:
+        return float("nan"), None, None
+    hi = max(defined, key=defined.get)
+    lo = min(defined, key=defined.get)
+    return float(defined[hi] - defined[lo]), hi, lo
+
+
 def false_negative_rate(y_true, y_pred) -> float:
     """
-    TODO: Compute the false-negative rate.
+    Compute the false-negative rate.
 
     Definition. The false-negative rate is the fraction of actual positives
     that the model failed to flag — among patients who truly have diabetes,
@@ -40,12 +65,18 @@ def false_negative_rate(y_true, y_pred) -> float:
         A single number between zero and one, or a not-a-number value when
         the metric is undefined.
     """
-    raise NotImplementedError("Implement false_negative_rate")
+    y_true, y_pred = _labels(y_true), _labels(y_pred)
+    positives = y_true == 1
+    n_pos = int(positives.sum())
+    if n_pos == 0:
+        return float("nan")
+    false_negatives = int((positives & (y_pred == 0)).sum())
+    return false_negatives / n_pos
 
 
 def false_positive_rate(y_true, y_pred) -> float:
     """
-    TODO: Compute the false-positive rate.
+    Compute the false-positive rate.
 
     Definition. The fraction of actual negatives the model incorrectly
     flagged — among patients who do NOT have diabetes, the share the model
@@ -59,12 +90,18 @@ def false_positive_rate(y_true, y_pred) -> float:
     Edge case. Return a not-a-number value when there are no actual
     negatives in the input.
     """
-    raise NotImplementedError("Implement false_positive_rate")
+    y_true, y_pred = _labels(y_true), _labels(y_pred)
+    negatives = y_true == 0
+    n_neg = int(negatives.sum())
+    if n_neg == 0:
+        return float("nan")
+    false_positives = int((negatives & (y_pred == 1)).sum())
+    return false_positives / n_neg
 
 
 def selection_rate(y_pred) -> float:
     """
-    TODO: Compute the selection rate.
+    Compute the selection rate.
 
     Definition. The fraction of inputs the model flagged as positive,
     regardless of whether the prediction was correct.
@@ -74,12 +111,15 @@ def selection_rate(y_pred) -> float:
     It is the basis for *demographic parity*, the parity-style fairness
     definition that ignores ground truth.
     """
-    raise NotImplementedError("Implement selection_rate")
+    y_pred = _labels(y_pred)
+    if y_pred.size == 0:
+        return float("nan")
+    return float((y_pred == 1).mean())
 
 
 def demographic_parity_difference(y_pred, sensitive) -> dict:
     """
-    TODO: Compute the demographic-parity difference across sensitive groups.
+    Compute the demographic-parity difference across sensitive groups.
 
     Definition. The largest gap in selection rate between any two groups
     in the input — the most-favored group's selection rate minus the
@@ -100,12 +140,20 @@ def demographic_parity_difference(y_pred, sensitive) -> dict:
         per-group breakdown of selection rates so the caller can inspect
         all groups, not just the extremes.
     """
-    raise NotImplementedError("Implement demographic_parity_difference")
+    y_pred = _labels(y_pred)
+    by_group = _rate_by_group(sensitive, selection_rate, y_pred)
+    difference, max_group, min_group = _spread(by_group)
+    return {
+        "difference": difference,
+        "max_group": max_group,
+        "min_group": min_group,
+        "selection_rate_by_group": by_group,
+    }
 
 
 def equalized_odds_difference(y_true, y_pred, sensitive) -> dict:
     """
-    TODO: Compute the equalized-odds difference across sensitive groups.
+    Compute the equalized-odds difference across sensitive groups.
 
     Definition. The larger of two cross-group gaps:
         - the gap in false-positive rate between groups, and
@@ -124,4 +172,26 @@ def equalized_odds_difference(y_true, y_pred, sensitive) -> dict:
         an indicator of which of the two is the larger driver, and the
         per-group breakdowns of both rates.
     """
-    raise NotImplementedError("Implement equalized_odds_difference")
+    y_true, y_pred = _labels(y_true), _labels(y_pred)
+    fnr_by_group = _rate_by_group(sensitive, false_negative_rate, y_true, y_pred)
+    fpr_by_group = _rate_by_group(sensitive, false_positive_rate, y_true, y_pred)
+    fnr_diff, _, _ = _spread(fnr_by_group)
+    fpr_diff, _, _ = _spread(fpr_by_group)
+
+    # A gap that is undefined (no group has positives / negatives) cannot drive
+    # the result. On a tie, report FNR: a missed diagnosis is the costlier error.
+    if np.isnan(fnr_diff) and np.isnan(fpr_diff):
+        difference, driver = float("nan"), None
+    elif np.isnan(fpr_diff) or (not np.isnan(fnr_diff) and fnr_diff >= fpr_diff):
+        difference, driver = fnr_diff, "FNR"
+    else:
+        difference, driver = fpr_diff, "FPR"
+
+    return {
+        "difference": difference,
+        "fnr_difference": fnr_diff,
+        "fpr_difference": fpr_diff,
+        "driver": driver,
+        "fnr_by_group": fnr_by_group,
+        "fpr_by_group": fpr_by_group,
+    }
